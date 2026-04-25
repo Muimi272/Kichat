@@ -1,19 +1,19 @@
 # Kichat
 
-Kichat is a lightweight real-time chat room built with Spring Boot, Thymeleaf, WebSocket, and STOMP.
+Kichat 是一个轻量级实时聊天室，基于 Spring Boot、Thymeleaf、WebSocket 和 STOMP 构建。
 
-The project provides:
+项目提供：
 
-- A username-based join flow
-- Public room chat
-- Private chat between online users
-- Online user lookup for recipient suggestions
-- Join/leave system messages
-- A frontend with light/dark theme switching
+- 基于用户名的加入流程
+- 公共聊天室聊天
+- 在线用户之间的私聊
+- 在线用户查询，用于收件人建议
+- 加入/离开的系统消息
+- 支持亮色/暗色主题切换的前端页面
 
-This repository is a small full-stack demo: the backend is a Spring Boot WebSocket application, and the frontend is rendered with Thymeleaf templates plus browser-side STOMP logic.
+这个仓库是一个小型全栈演示项目：后端是 Spring Boot WebSocket 应用，前端使用 Thymeleaf 模板渲染，并在浏览器端使用 STOMP 逻辑。
 
-## Tech Stack
+## 技术栈
 
 - Java 25
 - Spring Boot 4.0.6
@@ -22,32 +22,32 @@ This repository is a small full-stack demo: the backend is a Spring Boot WebSock
 - Thymeleaf
 - Lombok
 - Maven / Maven Wrapper
-- Plain HTML, CSS, and JavaScript
+- 原生 HTML、CSS 和 JavaScript
 
-## Features
+## 功能
 
-- Unique username join flow
-  Users join the room from `/join`. Duplicate usernames are rejected by the server.
+- 唯一用户名加入流程
+  用户从 `/join` 页面加入聊天室。重复用户名会被服务器拒绝。
 
-- Public chat
-  Messages sent to the public room are broadcast to all connected users.
+- 公共聊天
+  发送到公共聊天室的消息会广播给所有已连接用户。
 
-- Private chat
-  A user can send direct messages to another online user.
+- 私聊
+  用户可以向另一个在线用户发送私信。
 
-- Mention-based recipient selection
-  On the room page, typing `@username` triggers recipient suggestions and switches the composer into private mode.
+- 基于提及的收件人选择
+  在聊天室页面输入 `@username` 会触发收件人建议，并将输入区切换到私聊模式。
 
-- Online user query
-  The frontend requests the current online user list from the backend to support private messaging.
+- 在线用户查询
+  前端会向后端请求当前在线用户列表，用于支持私聊。
 
-- Session-aware identity verification
-  The backend binds usernames to WebSocket sessions and verifies message ownership against the session before processing chat operations.
+- 感知会话的身份校验
+  后端会把用户名绑定到 WebSocket 会话，并在处理聊天操作前根据会话校验消息归属。
 
-- Theme switching
-  The UI supports light mode and dark mode, with the selected theme stored in `localStorage`.
+- 主题切换
+  UI 支持亮色模式和暗色模式，所选主题会存储在 `localStorage` 中。
 
-## Project Structure
+## 项目结构
 
 ```text
 Kichat/
@@ -55,7 +55,6 @@ Kichat/
 │  └─ wrapper/
 │     └─ maven-wrapper.properties
 ├─ .gitattributes
-├─ .gitignore
 ├─ src/
 │  ├─ main/
 │  │  ├─ java/com/muimi/kichat/
@@ -76,108 +75,107 @@ Kichat/
 │  │  └─ resources/
 │  │     ├─ application.properties
 │  │     └─ templates/
+│  │        ├─ error.html
 │  │        ├─ join.html
 │  │        └─ room.html
-│  └─ test/
-│     └─ java/com/muimi/kichat/KichatApplicationTests.java
 ├─ README.md
 ├─ mvnw
 ├─ mvnw.cmd
 └─ pom.xml
 ```
 
-## How It Works
+## 工作原理
 
-### Page Routing
+### 页面路由
 
 - `GET /join`
-  Renders the join page.
+  渲染加入页面。
 
 - `GET /room`
-  Renders the chat room page.
+  渲染聊天室页面。
 
-There is currently no controller mapping for `/`, so the intended entry URL is:
+当前没有为 `/` 配置控制器映射，因此推荐入口地址是：
 
 ```text
 http://localhost:8080/join
 ```
 
-### WebSocket Endpoint
+### WebSocket 端点
 
-The STOMP endpoint is:
+STOMP 端点是：
 
 ```text
 /ws-chat
 ```
 
-The frontend connects directly to:
+前端会直接连接到：
 
 - `ws://<host>/ws-chat`
-- `wss://<host>/ws-chat` when served over HTTPS
+- 通过 HTTPS 提供服务时使用 `wss://<host>/ws-chat`
 
-### STOMP Configuration
+### STOMP 配置
 
-The application destination prefix is:
+应用目的地址前缀是：
 
 ```text
 /Kichat
 ```
 
-The broker prefixes are:
+消息代理前缀是：
 
 ```text
 /topic
 /queue
 ```
 
-The user destination prefix is:
+用户目的地址前缀是：
 
 ```text
 /user
 ```
 
-Heartbeat is enabled with:
+心跳已启用：
 
 ```text
 30s send / 30s receive
 ```
 
-## Message Routes
+## 消息路由
 
-### Client -> Server
+### 客户端 -> 服务端
 
 - `/Kichat/join`
-  Join the room
+  加入聊天室
 
 - `/Kichat/chat`
-  Send a public message
+  发送公共消息
 
 - `/Kichat/private`
-  Send a private message
+  发送私聊消息
 
 - `/Kichat/leave`
-  Leave the room
+  离开聊天室
 
 - `/Kichat/queryAll`
-  Query the current online user list
+  查询当前在线用户列表
 
-### Server -> Client
+### 服务端 -> 客户端
 
 - `/topic/public`
-  Broadcast public messages and join/leave events
+  广播公共消息以及加入/离开事件
 
 - `/user/queue/private`
-  Deliver private messages to a specific user session
+  向指定用户会话投递私聊消息
 
 - `/user/queue/error`
-  Deliver validation or identity errors back to the current user session
+  将校验错误或身份错误返回给当前用户会话
 
 - `/user/queue/queryAll`
-  Return the current online user list to the requesting session
+  将当前在线用户列表返回给发起请求的会话
 
-## Message Model
+## 消息模型
 
-The backend uses `ChatMessage` with these fields:
+后端使用 `ChatMessage`，字段如下：
 
 - `type`
 - `sender`
@@ -185,7 +183,7 @@ The backend uses `ChatMessage` with these fields:
 - `content`
 - `time`
 
-Supported message types:
+支持的消息类型：
 
 - `JOIN`
 - `LEAVE`
@@ -194,166 +192,166 @@ Supported message types:
 - `PRIVATE`
 - `QUERY`
 
-## User and Session Management
+## 用户和会话管理
 
-Online users are stored in-memory using concurrent collections inside `UserRepo`.
+在线用户通过 `UserRepo` 内部的并发集合存储在内存中。
 
-What the backend keeps:
+后端保存的内容：
 
-- A concurrent set of usernames
-- A username -> sessionId map
+- 一个用户名并发集合
+- 一个 username -> sessionId 映射
 
-What this means in practice:
+这在实际使用中意味着：
 
-- User state is not persisted
-- Restarting the application clears all users
-- This is suitable for a demo or small local project, not for production-grade horizontal scaling
+- 用户状态不会持久化
+- 应用重启后会清空所有用户
+- 适合作为演示或小型本地项目，不适合生产级横向扩展
 
-## Frontend Behavior
+## 前端行为
 
 ### join.html
 
-The join page:
+加入页面会：
 
-- Connects to the WebSocket endpoint
-- Lets the user enter a username
-- Sends a `JOIN` message to the backend
-- Stores the username in `sessionStorage`
-- Redirects to `/room` after successful join
+- 连接到 WebSocket 端点
+- 让用户输入用户名
+- 向后端发送 `JOIN` 消息
+- 将用户名存入 `sessionStorage`
+- 加入成功后跳转到 `/room`
 
 ### room.html
 
-The room page:
+聊天室页面会：
 
-- Requires a username from `sessionStorage`
-- Connects to the same WebSocket endpoint
-- Displays public, private, and system messages
-- Supports private targeting via `@username`
-- Queries the server for online users
-- Allows switching back from private mode to public mode
-- Supports leave-room flow with confirmation
-- Supports theme switching between light and dark mode
+- 要求从 `sessionStorage` 中读取用户名
+- 连接到同一个 WebSocket 端点
+- 显示公共消息、私聊消息和系统消息
+- 支持通过 `@username` 指定私聊对象
+- 向服务器查询在线用户
+- 允许从私聊模式切回公共模式
+- 支持带确认的离开聊天室流程
+- 支持亮色/暗色主题切换
 
-## Running the Project
+## 运行项目
 
-### Requirements
+### 环境要求
 
 - JDK 25
-- Maven 3.9+ or the included Maven Wrapper
+- Maven 3.9+ 或仓库内置的 Maven Wrapper
 
-### Start in Development
+### 开发环境启动
 
-Using Maven Wrapper on Windows:
+在 Windows 上使用 Maven Wrapper：
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-Using Maven Wrapper on macOS/Linux:
+在 macOS/Linux 上使用 Maven Wrapper：
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Using a local Maven installation:
+使用本地安装的 Maven：
 
 ```bash
 mvn spring-boot:run
 ```
 
-Then open:
+然后打开：
 
 ```text
 http://localhost:8080/join
 ```
 
-### Build the Project
+### 构建项目
 
 ```bash
 mvn clean package
 ```
 
-Or:
+或者：
 
 ```powershell
 .\mvnw.cmd clean package
 ```
 
-## Testing
+## 测试
 
-The test suite currently contains a basic Spring context startup test:
+当前测试套件包含一个基础的 Spring 上下文启动测试：
 
 ```bash
 mvn test
 ```
 
-Or:
+或者：
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-## Notes and Limitations
+## 说明和限制
 
-- User data is in-memory only
-- There is no database integration
-- There is no authentication beyond session-bound username validation
-- `/` is not mapped; use `/join`
-- The frontend depends on the STOMP client loaded from jsDelivr CDN
-- The current automated tests are minimal
+- 用户数据只保存在内存中
+- 没有数据库集成
+- 除了基于会话绑定的用户名校验外，没有额外认证机制
+- `/` 未映射，请使用 `/join`
+- 前端依赖从 jsDelivr CDN 加载的 STOMP 客户端
+- 当前自动化测试较少
 
-## Troubleshooting
+## 故障排查
 
-### Maven Wrapper does not start
+### Maven Wrapper 无法启动
 
-If the wrapper script fails in your environment, use a locally installed Maven instead:
+如果 wrapper 脚本在你的环境中失败，请改用本地安装的 Maven：
 
 ```bash
 mvn spring-boot:run
 ```
 
-### Cannot enter the room
+### 无法进入聊天室
 
-Check the following:
+请检查以下内容：
 
-- The server is running
-- You opened `/join`, not `/room` directly
-- The username is not already in use
-- The browser can reach `/ws-chat`
+- 服务器正在运行
+- 你打开的是 `/join`，而不是直接打开 `/room`
+- 用户名没有被占用
+- 浏览器可以访问 `/ws-chat`
 
-### Private messaging does not show a recipient
+### 私聊没有显示收件人
 
-Private messaging depends on the online user query flow. Make sure:
+私聊依赖在线用户查询流程。请确认：
 
-- The target user is already online
-- The WebSocket connection is active
-- The current user successfully joined before entering the room
+- 目标用户已经在线
+- WebSocket 连接处于活动状态
+- 当前用户已经成功加入聊天室
 
-## Main Backend Classes
+## 主要后端类
 
 - [KichatApplication](src/main/java/com/muimi/kichat/KichatApplication.java)
-  Spring Boot application entry point
+  Spring Boot 应用入口
 
 - [WebSocketConfig](src/main/java/com/muimi/kichat/controller/WebSocketConfig.java)
-  WebSocket/STOMP endpoint, broker, and heartbeat configuration
+  WebSocket/STOMP 端点、消息代理和心跳配置
 
 - [ChatController](src/main/java/com/muimi/kichat/controller/ChatController.java)
-  Main WebSocket message handling logic
+  主要 WebSocket 消息处理逻辑
 
 - [PageController](src/main/java/com/muimi/kichat/controller/PageController.java)
-  Thymeleaf page routing
+  Thymeleaf 页面路由
 
 - [UserRepo](src/main/java/com/muimi/kichat/repo/UserRepo.java)
-  In-memory user and session storage
+  内存中的用户和会话存储
 
 - [UserService](src/main/java/com/muimi/kichat/Service/UserService.java)
-  Thin service layer over the repository
+  仓库之上的轻量服务层
 
 - [ChatMessage](src/main/java/com/muimi/kichat/entity/ChatMessage.java)
-  Message payload model
+  消息载荷模型
 
 - [Type](src/main/java/com/muimi/kichat/entity/Type.java)
-  Supported message types
+  支持的消息类型
 
 - [Kitimer](src/main/java/com/muimi/kichat/util/Kitimer.java)
-  Cached `HH:mm:ss` time formatter used by the backend
+  后端使用的缓存版 `HH:mm:ss` 时间格式化工具

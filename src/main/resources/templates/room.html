@@ -85,7 +85,8 @@
         body {
             margin: 0;
             min-height: 100vh;
-            padding: 18px;
+            min-height: 100dvh;
+            padding: calc(18px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
             display: grid;
             place-items: center;
             font-family: "Space Grotesk", "Aptos", "Segoe UI", sans-serif;
@@ -95,7 +96,8 @@
                 radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.16), transparent 26%),
                 linear-gradient(160deg, var(--bg-1), var(--bg-2));
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             user-select: none;
         }
 
@@ -131,6 +133,7 @@
             flex-direction: column;
             width: min(1180px, 100%);
             height: min(920px, calc(100vh - 36px));
+            height: min(920px, calc(100dvh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
             border-radius: 30px;
             overflow: hidden;
             border: 1px solid var(--panel-border);
@@ -174,6 +177,7 @@
 
         .title-stack {
             min-width: 0;
+            flex: 1;
         }
 
         .title-stack h2 {
@@ -199,6 +203,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            max-width: 100%;
             padding: 8px 12px;
             border-radius: 999px;
             background: var(--surface-chip);
@@ -208,6 +213,10 @@
 
         .header-chip strong {
             color: #fff;
+        }
+
+        .chip-label-short {
+            display: none;
         }
 
         .connection-chip::before {
@@ -544,6 +553,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            max-width: 100%;
             padding: 8px 12px;
             border-radius: 999px;
             background: rgba(15, 23, 42, 0.04);
@@ -645,6 +655,7 @@
         .send-btn {
             min-width: 128px;
             min-height: 56px;
+            flex-shrink: 0;
             border: none;
             border-radius: 18px;
             background: linear-gradient(135deg, var(--primary), #3b82f6);
@@ -719,17 +730,21 @@
 
         @media (max-width: 1024px) {
             .chat-container {
-                height: calc(100vh - 24px);
+                height: calc(100vh - 36px);
+                height: calc(100dvh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
             }
         }
 
         @media (max-width: 720px) {
             body {
-                padding: 10px;
+                place-items: stretch;
+                padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
             }
 
             .chat-container {
+                width: 100%;
                 height: calc(100vh - 20px);
+                height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
                 border-radius: 24px;
             }
 
@@ -739,9 +754,19 @@
                 align-items: stretch;
             }
 
+            .topbar-main {
+                align-items: flex-start;
+                width: 100%;
+            }
+
             .topbar-actions {
                 width: 100%;
                 justify-content: space-between;
+            }
+
+            .topbar-actions > * {
+                flex: 1 1 0;
+                min-width: 0;
             }
 
             .content-shell {
@@ -754,6 +779,7 @@
 
             .composer-wrap {
                 margin: 0 14px 14px;
+                margin-bottom: calc(14px + env(safe-area-inset-bottom));
                 padding: 14px;
                 border-radius: 20px;
             }
@@ -767,6 +793,11 @@
             .composer {
                 display: flex;
                 flex-direction: column;
+                gap: 10px;
+            }
+
+            .input-stack {
+                width: 100%;
             }
 
             .composer-meta {
@@ -774,6 +805,7 @@
             }
 
             .send-btn {
+                min-width: 0;
                 width: 100%;
             }
 
@@ -782,10 +814,244 @@
             }
 
             #messages li.system,
+            #messages li.error {
+                max-width: 100%;
+                border-radius: 22px;
+            }
+
+            #messages li.system,
             #messages li.error,
             #messages li .message-head {
                 flex-direction: column;
                 align-items: start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topbar {
+                padding: 16px;
+                gap: 14px;
+            }
+
+            .brand-mark {
+                width: 44px;
+                height: 44px;
+                border-radius: 16px;
+                font-size: 16px;
+            }
+
+            .title-stack h2 {
+                font-size: 21px;
+                white-space: normal;
+            }
+
+            .title-sub {
+                gap: 8px;
+            }
+
+            .chip-label-full {
+                display: none;
+            }
+
+            .chip-label-short {
+                display: inline;
+            }
+
+            .header-chip {
+                min-height: 32px;
+                padding: 6px 9px;
+                gap: 6px;
+                font-size: 12px;
+                line-height: 1.25;
+                white-space: normal;
+            }
+
+            .connection-chip::before {
+                width: 7px;
+                height: 7px;
+                box-shadow: 0 0 0 4px rgba(247, 144, 9, 0.14);
+            }
+
+            .connection-chip[data-tone="success"]::before {
+                box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.16);
+            }
+
+            .connection-chip[data-tone="error"]::before {
+                box-shadow: 0 0 0 4px rgba(249, 112, 102, 0.14);
+            }
+
+            .mode-pill {
+                width: 100%;
+            }
+
+            .mode-pill,
+            .header-chip {
+                overflow-wrap: anywhere;
+            }
+
+            .messages-shell {
+                padding: 12px 12px 0;
+            }
+
+            #messages {
+                gap: 12px;
+                padding: 4px 2px 18px;
+            }
+
+            #messages li {
+                max-width: 100%;
+                padding: 12px 13px;
+                border-radius: 18px;
+                font-size: 13px;
+                line-height: 1.55;
+                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            }
+
+            #messages li.public,
+            #messages li.private-in {
+                max-width: 94%;
+            }
+
+            #messages li.public-out,
+            #messages li.private-out {
+                max-width: 94%;
+            }
+
+            #messages li .message-head {
+                gap: 7px;
+            }
+
+            #messages li .message-meta {
+                gap: 6px;
+                width: 100%;
+            }
+
+            #messages li .message-author {
+                min-width: 0;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-size: 13px;
+            }
+
+            #messages li .message-channel {
+                min-height: 21px;
+                padding-inline: 8px;
+                font-size: 10px;
+                letter-spacing: 0.03em;
+            }
+
+            #messages li .message-time {
+                align-self: flex-start;
+                font-size: 11px;
+            }
+
+            #messages li .message-context {
+                margin-top: 3px;
+                font-size: 11px;
+            }
+
+            #messages li .message-body {
+                margin-top: 8px;
+                overflow-wrap: anywhere;
+            }
+
+            #messages li.system,
+            #messages li.error {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 7px 8px;
+                padding: 9px 11px;
+            }
+
+            #messages li .notice-badge {
+                min-height: 21px;
+                padding-inline: 8px;
+                font-size: 10px;
+            }
+
+            #messages li .notice-text {
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            #messages li .notice-time {
+                grid-column: 2;
+            }
+
+            .composer-wrap {
+                margin: 0 12px calc(12px + env(safe-area-inset-bottom));
+                padding: 12px;
+            }
+
+            .mode-bar {
+                gap: 10px;
+            }
+
+            .mode-left,
+            .ghost-btn {
+                width: 100%;
+            }
+
+            .composer input,
+            .send-btn {
+                min-height: 52px;
+                font-size: 16px;
+            }
+
+            .send-btn {
+                width: 100%;
+            }
+
+            .mention-list {
+                left: 12px;
+                right: 12px;
+                bottom: calc(100% + 10px);
+                max-height: min(220px, 42dvh);
+            }
+        }
+
+        @media (max-width: 360px) {
+            .topbar {
+                padding: 14px;
+            }
+
+            .topbar-main {
+                gap: 12px;
+            }
+
+            .brand-mark {
+                width: 40px;
+                height: 40px;
+                border-radius: 14px;
+            }
+
+            .topbar-actions {
+                gap: 8px;
+            }
+
+            .leave-btn,
+            .theme-toggle {
+                padding-inline: 10px;
+            }
+
+            .composer-wrap {
+                margin-inline: 10px;
+                padding: 10px;
+            }
+
+            .title-sub {
+                gap: 6px;
+            }
+
+            .header-chip {
+                padding-inline: 8px;
+                font-size: 11px;
+            }
+
+            #messages li {
+                padding: 11px 12px;
             }
         }
     </style>
@@ -799,8 +1065,8 @@
                 <h2 id="roomTitle">Kichat</h2>
                 <div class="title-sub">
                     <span id="connectionState" class="header-chip connection-chip" data-tone="busy">Connecting</span>
-                    <span class="header-chip">Signed in as <strong id="usernameBadge">guest</strong></span>
-                    <span class="header-chip">Online <strong id="onlineCountHeader">0</strong></span>
+                    <span class="header-chip"><span class="chip-label-full">Signed in as</span><span class="chip-label-short">Me</span> <strong id="usernameBadge">guest</strong></span>
+                    <span class="header-chip"><span class="chip-label-full">Online</span><span class="chip-label-short">On</span> <strong id="onlineCountHeader">0</strong></span>
                 </div>
             </div>
         </div>

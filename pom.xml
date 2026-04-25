@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.Muimi</groupId>
     <artifactId>Kichat</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>Kichat</name>
     <description>Kichat</description>
     <url/>
