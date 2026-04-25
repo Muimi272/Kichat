@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kichat - Chat</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem("kichatTheme");
+            const theme = savedTheme === "light" || savedTheme === "dark"
+                ? savedTheme
+                : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg-1: #eef4ff;
+            --bg-2: #f9fbff;
+            --panel: rgba(255, 255, 255, 0.86);
+            --panel-border: rgba(255, 255, 255, 0.72);
+            --text: #122033;
+            --muted: #60708f;
+            --line: rgba(148, 163, 184, 0.24);
+            --primary: #2563eb;
+            --primary-strong: #1d4ed8;
+            --primary-soft: rgba(37, 99, 235, 0.12);
+            --accent-soft: rgba(56, 189, 248, 0.14);
+            --success: #039855;
+            --success-soft: rgba(3, 152, 85, 0.12);
+            --danger: #d92d20;
+            --danger-soft: rgba(217, 45, 32, 0.1);
+            --shadow: 0 30px 80px rgba(37, 65, 120, 0.18);
+            --surface: rgba(255, 255, 255, 0.9);
+            --surface-strong: rgba(255, 255, 255, 0.96);
+            --surface-soft: rgba(255, 255, 255, 0.84);
+            --surface-chip: rgba(255, 255, 255, 0.12);
+            --surface-border: rgba(148, 163, 184, 0.18);
+            --surface-border-strong: rgba(255, 255, 255, 0.18);
+            --text-strong: #0f172a;
+            --text-soft: #64748b;
+            --text-faint: #94a3b8;
+            --button-soft-bg: #fff;
+            --button-soft-text: #334155;
+            --tag-neutral-bg: rgba(15, 23, 42, 0.06);
+            --tag-neutral-text: #475569;
+            --notice-badge-bg: rgba(255, 255, 255, 0.58);
+        }
+
+        html[data-theme="dark"] {
+            color-scheme: dark;
+            --bg-1: #08111f;
+            --bg-2: #0f1b31;
+            --panel: rgba(8, 14, 25, 0.84);
+            --panel-border: rgba(148, 163, 184, 0.14);
+            --text: #e5eefc;
+            --muted: #98adcb;
+            --line: rgba(148, 163, 184, 0.18);
+            --primary-soft: rgba(59, 130, 246, 0.18);
+            --accent-soft: rgba(56, 189, 248, 0.18);
+            --success-soft: rgba(3, 152, 85, 0.16);
+            --danger-soft: rgba(217, 45, 32, 0.16);
+            --shadow: 0 30px 80px rgba(0, 0, 0, 0.46);
+            --surface: rgba(10, 29, 68, 0.9);
+            --surface-strong: rgba(9, 25, 58, 0.96);
+            --surface-soft: rgba(8, 21, 49, 0.88);
+            --surface-chip: rgba(24, 58, 120, 0.34);
+            --surface-border: rgba(148, 163, 184, 0.14);
+            --surface-border-strong: rgba(148, 163, 184, 0.18);
+            --text-strong: #f8fbff;
+            --text-soft: #a4b6d4;
+            --text-faint: #7f93b2;
+            --button-soft-bg: rgba(9, 25, 58, 0.92);
+            --button-soft-text: #e5eefc;
+            --tag-neutral-bg: rgba(37, 99, 235, 0.18);
+            --tag-neutral-text: #c3d1e8;
+            --notice-badge-bg: rgba(148, 163, 184, 0.14);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 18px;
+            display: grid;
+            place-items: center;
+            font-family: "Space Grotesk", "Aptos", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 34%),
+                radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.16), transparent 26%),
+                linear-gradient(160deg, var(--bg-1), var(--bg-2));
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            border-radius: 999px;
+            filter: blur(10px);
+            pointer-events: none;
+        }
+
+        body::before {
+            width: 340px;
+            height: 340px;
+            left: -110px;
+            bottom: -120px;
+            background: rgba(37, 99, 235, 0.12);
+        }
+
+        body::after {
+            width: 260px;
+            height: 260px;
+            right: -80px;
+            top: 8%;
+            background: rgba(56, 189, 248, 0.14);
+        }
+
+        .chat-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            width: min(1180px, 100%);
+            height: min(920px, calc(100vh - 36px));
+            border-radius: 30px;
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+            background: var(--panel);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            padding: 22px 28px;
+            background:
+                linear-gradient(135deg, rgba(18, 32, 51, 0.96), rgba(37, 99, 235, 0.92)),
+                linear-gradient(135deg, #1d4ed8, #38bdf8);
+            color: #fff;
+        }
+
+        .topbar-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .brand-mark {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            background: rgba(255, 255, 255, 0.16);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        }
+
+        .title-stack {
+            min-width: 0;
+        }
+
+        .title-stack h2 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: -0.03em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .title-sub {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .header-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--surface-chip);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            white-space: nowrap;
+        }
+
+        .header-chip strong {
+            color: #fff;
+        }
+
+        .connection-chip::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f79009;
+            box-shadow: 0 0 0 5px rgba(247, 144, 9, 0.14);
+        }
+
+        .connection-chip[data-tone="success"]::before {
+            background: #34d399;
+            box-shadow: 0 0 0 5px rgba(52, 211, 153, 0.16);
+        }
+
+        .connection-chip[data-tone="error"]::before {
+            background: #f97066;
+            box-shadow: 0 0 0 5px rgba(249, 112, 102, 0.14);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .leave-btn {
+            min-height: 48px;
+            padding: 0 18px;
+            border: 1px solid var(--surface-border-strong);
+            border-radius: 16px;
+            background: var(--surface-chip);
+            color: #fff;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .leave-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.24);
+        }
+
+        .theme-toggle {
+            min-height: 48px;
+            padding: 0 16px;
+            border: 1px solid var(--surface-border-strong);
+            border-radius: 16px;
+            background: var(--surface-chip);
+            color: #fff;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.24);
+        }
+
+        .content-shell {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.24)),
+                linear-gradient(120deg, rgba(37, 99, 235, 0.04), transparent 24%);
+        }
+
+        html[data-theme="dark"] .content-shell {
+            background:
+                linear-gradient(180deg, rgba(8, 21, 49, 0.92), rgba(6, 16, 38, 0.98)),
+                linear-gradient(120deg, rgba(37, 99, 235, 0.1), transparent 30%);
+        }
+
+        .chat-panel {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-shell {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+            padding: 20px 22px 0;
+        }
+
+        html[data-theme="dark"] .messages-shell {
+            background:
+                linear-gradient(180deg, rgba(11, 30, 69, 0.4), rgba(11, 30, 69, 0));
+        }
+
+        #messages {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            list-style: none;
+            margin: 0;
+            padding: 6px 8px 22px;
+            overflow-y: auto;
+            gap: 14px;
+            scroll-behavior: smooth;
+        }
+
+        #messages li {
+            position: relative;
+            max-width: min(72%, 640px);
+            padding: 14px 16px;
+            border-radius: 20px;
+            word-break: break-word;
+            font-size: 14px;
+            line-height: 1.65;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+            border: 1px solid transparent;
+            animation: message-in 0.2s ease;
+        }
+
+        #messages li .message-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 12px;
+        }
+
+        #messages li .message-meta {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        #messages li .message-author {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-strong);
+        }
+
+        #messages li .message-channel {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 0 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: var(--tag-neutral-bg);
+            color: var(--tag-neutral-text);
+        }
+
+        #messages li .message-time {
+            flex-shrink: 0;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-faint);
+        }
+
+        #messages li .message-context {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+
+        #messages li .message-body {
+            margin-top: 10px;
+            white-space: pre-wrap;
+            color: var(--text);
+        }
+
+        #messages li.public-out .message-channel {
+            background: rgba(37, 99, 235, 0.14);
+            color: #1d4ed8;
+        }
+
+        #messages li.private-in .message-channel,
+        #messages li.private-out .message-channel {
+            background: rgba(16, 185, 129, 0.14);
+            color: #047857;
+        }
+
+        #messages li.private-out .message-channel {
+            background: rgba(245, 158, 11, 0.18);
+            color: #b45309;
+        }
+
+        #messages li.public-out .message-author,
+        #messages li.private-out .message-author {
+            color: var(--text-strong);
+        }
+
+        @keyframes message-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #messages li.system,
+        #messages li.error {
+            max-width: 82%;
+            align-self: center;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: none;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        #messages li .notice-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 0 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: var(--notice-badge-bg);
+        }
+
+        #messages li .notice-text {
+            line-height: 1.5;
+        }
+
+        #messages li .notice-time {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-soft);
+        }
+
+        #messages li.system .notice-badge {
+            color: var(--primary-strong);
+        }
+
+        #messages li.error .notice-badge {
+            color: var(--danger);
+        }
+
+        #messages li.system {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-strong);
+            border-color: rgba(37, 99, 235, 0.12);
+        }
+
+        #messages li.error {
+            background: rgba(217, 45, 32, 0.1);
+            color: var(--danger);
+            border-color: rgba(217, 45, 32, 0.14);
+        }
+
+        #messages li.public {
+            align-self: flex-start;
+            background: var(--surface);
+            border-color: var(--surface-border);
+            border-bottom-left-radius: 8px;
+        }
+
+        html[data-theme="dark"] #messages li.public {
+            background: rgba(10, 31, 74, 0.96);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        #messages li.public-out {
+            align-self: flex-end;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(56, 189, 248, 0.12));
+            border-color: rgba(37, 99, 235, 0.16);
+            border-bottom-right-radius: 8px;
+        }
+
+        #messages li.private-in {
+            align-self: flex-start;
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.16);
+            border-bottom-left-radius: 8px;
+        }
+
+        #messages li.private-out {
+            align-self: flex-end;
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.18);
+            border-bottom-right-radius: 8px;
+        }
+
+        .composer-wrap {
+            flex-shrink: 0;
+            position: relative;
+            margin: 0 22px 22px;
+            padding: 18px;
+            border-radius: 24px;
+            background: var(--surface-soft);
+            border: 1px solid var(--surface-border);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .mode-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .mode-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .mode-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid var(--surface-border);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--button-soft-text);
+        }
+
+        .mode-pill.mode-private {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--primary-strong);
+            border-color: rgba(37, 99, 235, 0.16);
+        }
+
+        .mode-pill::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .mode-pill.mode-private::before {
+            background: var(--primary);
+        }
+
+        .ghost-btn {
+            min-height: 38px;
+            padding: 0 12px;
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            background: var(--button-soft-bg);
+            color: var(--button-soft-text);
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .ghost-btn:hover {
+            background: rgba(37, 99, 235, 0.04);
+            border-color: rgba(37, 99, 235, 0.18);
+        }
+
+        .composer {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .input-stack {
+            position: relative;
+        }
+
+        .composer input {
+            width: 100%;
+            min-height: 56px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            border: 1px solid var(--surface-border);
+            background: var(--surface-strong);
+            font: inherit;
+            font-size: 15px;
+            color: var(--text);
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+            user-select: text;
+        }
+
+        .composer input:hover {
+            border-color: rgba(37, 99, 235, 0.22);
+        }
+
+        .composer input:focus {
+            outline: none;
+            border-color: rgba(37, 99, 235, 0.5);
+            box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .composer input:disabled {
+            background: rgba(248, 250, 252, 0.9);
+            cursor: not-allowed;
+        }
+
+        .send-btn {
+            min-width: 128px;
+            min-height: 56px;
+            border: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: #fff;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 20px 35px rgba(37, 99, 235, 0.2);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 24px 40px rgba(37, 99, 235, 0.24);
+        }
+
+        .send-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+            box-shadow: none;
+        }
+
+        .composer-meta {
+            margin-top: 12px;
+            display: flex;
+            justify-content: end;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .composer-meta strong {
+            color: var(--button-soft-text);
+        }
+
+        .mention-list {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: calc(100% + 12px);
+            margin: 0;
+            padding: 10px;
+            list-style: none;
+            border: 1px solid var(--surface-border);
+            border-radius: 20px;
+            background: var(--surface-strong);
+            max-height: 220px;
+            overflow-y: auto;
+            box-shadow: 0 28px 40px rgba(15, 23, 42, 0.12);
+            z-index: 10;
+        }
+
+        .mention-list li {
+            padding: 12px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--button-soft-text);
+            transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+        }
+
+        .mention-list li.active,
+        .mention-list li:hover {
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--primary-strong);
+            transform: translateX(2px);
+        }
+
+        #messages li .message-body {
+            user-select: text;
+        }
+
+        @media (max-width: 1024px) {
+            .chat-container {
+                height: calc(100vh - 24px);
+            }
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 10px;
+            }
+
+            .chat-container {
+                height: calc(100vh - 20px);
+                border-radius: 24px;
+            }
+
+            .topbar {
+                padding: 18px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .topbar-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .content-shell {
+                min-height: 0;
+            }
+
+            .messages-shell {
+                padding: 14px 14px 0;
+            }
+
+            .composer-wrap {
+                margin: 0 14px 14px;
+                padding: 14px;
+                border-radius: 20px;
+            }
+
+            .mode-bar,
+            .composer-meta {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .composer {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .composer-meta {
+                justify-content: start;
+            }
+
+            .send-btn {
+                width: 100%;
+            }
+
+            #messages li {
+                max-width: 88%;
+            }
+
+            #messages li.system,
+            #messages li.error,
+            #messages li .message-head {
+                flex-direction: column;
+                align-items: start;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="topbar">
+        <div class="topbar-main">
+            <div class="brand-mark">KI</div>
+            <div class="title-stack">
+                <h2 id="roomTitle">Kichat</h2>
+                <div class="title-sub">
+                    <span id="connectionState" class="header-chip connection-chip" data-tone="busy">Connecting</span>
+                    <span class="header-chip">Signed in as <strong id="usernameBadge">guest</strong></span>
+                    <span class="header-chip">Online <strong id="onlineCountHeader">0</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <button id="themeToggle" class="theme-toggle" type="button">Dark mode</button>
+            <button id="leaveBtn" class="leave-btn" type="button">Leave</button>
+        </div>
+    </div>
+
+    <div class="content-shell">
+        <section class="chat-panel">
+            <div class="messages-shell">
+                <ul id="messages"></ul>
+            </div>
+
+            <div class="composer-wrap">
+                <div class="mode-bar">
+                    <div class="mode-left">
+                        <span id="modeLabel" class="mode-pill">Public</span>
+                    </div>
+                    <button id="clearPrivateBtn" class="ghost-btn" type="button" hidden>Back to Public</button>
+                </div>
+                <div class="composer">
+                    <div class="input-stack">
+                        <label class="sr-only" for="messageInput">Message</label>
+                        <input id="messageInput" type="text" maxlength="500" placeholder="Message">
+                    </div>
+                    <button id="sendBtn" class="send-btn" type="button">Send</button>
+                </div>
+                <div class="composer-meta">
+                    <span><strong id="messageCounter">0</strong> / 500</span>
+                </div>
+                <ul id="mentionList" class="mention-list" hidden></ul>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+<script>
+    const username = sessionStorage.getItem("kichatUsername");
+    if (!username) {
+        window.location.replace("/join");
+    }
+
+    const roomTitle = document.getElementById("roomTitle");
+    const usernameBadge = document.getElementById("usernameBadge");
+    const connectionStateEl = document.getElementById("connectionState");
+    const onlineCountHeaderEl = document.getElementById("onlineCountHeader");
+    const messagesEl = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const messageCounterEl = document.getElementById("messageCounter");
+    const sendBtn = document.getElementById("sendBtn");
+    const leaveBtn = document.getElementById("leaveBtn");
+    const themeToggleEl = document.getElementById("themeToggle");
+    const modeLabel = document.getElementById("modeLabel");
+    const clearPrivateBtn = document.getElementById("clearPrivateBtn");
+    const mentionListEl = document.getElementById("mentionList");
+
+    let stompClient = null;
+    let leaving = false;
+    let privateTarget = "";
+    let onlineUsers = [];
+    let mentionCandidates = [];
+    let mentionOpen = false;
+    let mentionKeyword = "";
+    let mentionAnchorIndex = -1;
+    let mentionActiveIndex = 0;
+    let lastQueryAt = 0;
+    let isConnected = false;
+
+    roomTitle.textContent = "Kichat - " + username;
+    usernameBadge.textContent = username;
+
+    function getCurrentTheme() {
+        return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    }
+
+    function updateThemeToggle() {
+        const currentTheme = getCurrentTheme();
+        themeToggleEl.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+        themeToggleEl.setAttribute("aria-label", currentTheme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("kichatTheme", theme);
+        updateThemeToggle();
+    }
+
+    function setConnectionState(text, tone) {
+        connectionStateEl.textContent = text;
+        connectionStateEl.dataset.tone = tone;
+    }
+
+    function updateMessageCounter() {
+        messageCounterEl.textContent = messageInput.value.length;
+    }
+
+    function updateOnlineCount() {
+        const count = onlineUsers.length;
+        onlineCountHeaderEl.textContent = count;
+    }
+
+    function updateComposerState() {
+        const hasContent = messageInput.value.trim().length > 0;
+        sendBtn.disabled = !isConnected || !hasContent;
+        if (privateTarget) {
+            messageInput.placeholder = "Message @" + privateTarget;
+            return;
+        }
+        messageInput.placeholder = "Message";
+    }
+
+    function formatDisplayTime(rawTime, includeSeconds) {
+        const now = new Date();
+        const options = {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        };
+
+        if (includeSeconds) {
+            options.second = "2-digit";
+        }
+
+        if (!rawTime) {
+            return new Intl.DateTimeFormat("en-GB", options).format(now);
+        }
+
+        if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(rawTime)) {
+            const parts = rawTime.split(":");
+            if (includeSeconds && parts.length === 2) {
+                return rawTime + ":00";
+            }
+            if (!includeSeconds && parts.length >= 2) {
+                return parts[0].padStart(2, "0") + ":" + parts[1];
+            }
+            return rawTime;
+        }
+
+        const parsed = new Date(rawTime);
+        if (!isNaN(parsed.getTime())) {
+            return new Intl.DateTimeFormat("en-GB", options).format(parsed);
+        }
+
+        return rawTime;
+    }
+
+    function appendMessage(messageView, cssClass) {
+        const view = typeof messageView === "string"
+            ? {
+                kind: "notice",
+                cssClass: cssClass || "system",
+                badge: cssClass === "error" ? "Error" : "System",
+                body: messageView,
+                time: formatDisplayTime("", true)
+            }
+            : messageView;
+        const item = document.createElement("li");
+        if (view.cssClass) {
+            item.classList.add(view.cssClass);
+        }
+
+        if (view.kind === "notice") {
+            const badge = document.createElement("span");
+            badge.className = "notice-badge";
+            badge.textContent = view.badge;
+
+            const text = document.createElement("span");
+            text.className = "notice-text";
+            text.textContent = view.body;
+
+            const time = document.createElement("span");
+            time.className = "notice-time";
+            time.textContent = view.time;
+
+            item.appendChild(badge);
+            item.appendChild(text);
+            item.appendChild(time);
+        } else {
+            const head = document.createElement("div");
+            head.className = "message-head";
+
+            const meta = document.createElement("div");
+            meta.className = "message-meta";
+
+            const author = document.createElement("span");
+            author.className = "message-author";
+            author.textContent = view.author;
+
+            const channel = document.createElement("span");
+            channel.className = "message-channel";
+            channel.textContent = view.channel;
+
+            const time = document.createElement("span");
+            time.className = "message-time";
+            time.textContent = view.time;
+
+            meta.appendChild(author);
+            meta.appendChild(channel);
+            head.appendChild(meta);
+            head.appendChild(time);
+            item.appendChild(head);
+
+            if (view.context) {
+                const context = document.createElement("div");
+                context.className = "message-context";
+                context.textContent = view.context;
+                item.appendChild(context);
+            }
+
+            const body = document.createElement("div");
+            body.className = "message-body";
+            body.textContent = view.body;
+            item.appendChild(body);
+        }
+
+        messagesEl.appendChild(item);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function formatMessage(message, channel) {
+        if (message.type === "JOIN" || message.type === "LEAVE") {
+            return {
+                kind: "notice",
+                cssClass: "system",
+                badge: message.type === "JOIN" ? "Joined" : "Left",
+                body: message.content || "System message",
+                time: formatDisplayTime(message.time, true)
+            };
+        }
+
+        if (message.type === "ERROR") {
+            return {
+                kind: "notice",
+                cssClass: "error",
+                badge: "Error",
+                body: message.content || "Unknown error",
+                time: formatDisplayTime(message.time, true)
+            };
+        }
+
+        if (channel === "private") {
+            const sender = message.sender || "Unknown";
+            const receiver = message.receiver || "Unknown";
+            const body = message.content || "";
+            const isOutgoing = sender === username;
+            return {
+                kind: "chat",
+                cssClass: isOutgoing ? "private-out" : "private-in",
+                author: isOutgoing ? "You" : sender,
+                channel: "Private",
+                context: isOutgoing ? "To @" + receiver : "To you",
+                time: formatDisplayTime(message.time, false),
+                body: body
+            };
+        }
+
+        const sender = message.sender || "Unknown";
+        const body = message.content || "";
+        const isOutgoing = sender === username;
+        return {
+            kind: "chat",
+            cssClass: isOutgoing ? "public-out" : "public",
+            author: isOutgoing ? "You" : sender,
+            channel: "Public",
+            context: null,
+            time: formatDisplayTime(message.time, false),
+            body: body
+        };
+    }
+
+    function parseUsers(content) {
+        if (!content) {
+            return [];
+        }
+        const users = [];
+        const pattern = /\[([^\x5D]+)\]/g;
+        let match = pattern.exec(content);
+        while (match) {
+            users.push(match[1]);
+            match = pattern.exec(content);
+        }
+        return users;
+    }
+
+    function updateModeUi() {
+        if (privateTarget) {
+            modeLabel.textContent = "Private · @" + privateTarget;
+            modeLabel.classList.add("mode-private");
+            clearPrivateBtn.hidden = false;
+            updateComposerState();
+            return;
+        }
+        modeLabel.textContent = "Public";
+        modeLabel.classList.remove("mode-private");
+        clearPrivateBtn.hidden = true;
+        updateComposerState();
+    }
+
+    function setPrivateTarget(target) {
+        privateTarget = target || "";
+        updateModeUi();
+    }
+
+    function requestOnlineUsers(force) {
+        if (!stompClient || !stompClient.connected) {
+            return;
+        }
+        const now = Date.now();
+        if (!force && now - lastQueryAt < 1000) {
+            return;
+        }
+        lastQueryAt = now;
+        stompClient.publish({
+            destination: "/Kichat/queryAll",
+            body: JSON.stringify({
+                type: "QUERY",
+                sender: username
+            })
+        });
+    }
+
+    function closeMentionList() {
+        mentionOpen = false;
+        mentionListEl.hidden = true;
+        mentionListEl.innerHTML = "";
+    }
+
+    function renderMentionList() {
+        mentionCandidates = onlineUsers.filter(function (user) {
+            return user !== username && user.toLowerCase().indexOf(mentionKeyword.toLowerCase()) === 0;
+        });
+
+        if (!mentionCandidates.length) {
+            closeMentionList();
+            return;
+        }
+
+        if (mentionActiveIndex >= mentionCandidates.length) {
+            mentionActiveIndex = 0;
+        }
+        if (mentionActiveIndex < 0) {
+            mentionActiveIndex = mentionCandidates.length - 1;
+        }
+
+        mentionListEl.innerHTML = "";
+        mentionCandidates.forEach(function (candidate, index) {
+            const item = document.createElement("li");
+            item.textContent = candidate;
+            if (index === mentionActiveIndex) {
+                item.classList.add("active");
+            }
+            item.addEventListener("mousedown", function (event) {
+                event.preventDefault();
+                selectMention(candidate);
+            });
+            mentionListEl.appendChild(item);
+        });
+        mentionOpen = true;
+        mentionListEl.hidden = false;
+    }
+
+    function syncMentionFromInput() {
+        const cursor = messageInput.selectionStart == null ? messageInput.value.length : messageInput.selectionStart;
+        const textBeforeCursor = messageInput.value.slice(0, cursor);
+        const atIndex = textBeforeCursor.lastIndexOf("@");
+        if (atIndex < 0) {
+            closeMentionList();
+            return;
+        }
+        const keyword = textBeforeCursor.slice(atIndex + 1);
+        if (keyword.indexOf(" ") >= 0) {
+            closeMentionList();
+            return;
+        }
+        mentionAnchorIndex = atIndex;
+        mentionKeyword = keyword;
+        mentionActiveIndex = 0;
+        if (onlineUsers.length === 0) {
+            requestOnlineUsers(true);
+        }
+        renderMentionList();
+    }
+
+    function hasActiveMentionTrigger() {
+        const cursor = messageInput.selectionStart == null ? messageInput.value.length : messageInput.selectionStart;
+        const textBeforeCursor = messageInput.value.slice(0, cursor);
+        const atIndex = textBeforeCursor.lastIndexOf("@");
+        if (atIndex < 0) {
+            return false;
+        }
+        const keyword = textBeforeCursor.slice(atIndex + 1);
+        return keyword.indexOf(" ") < 0;
+    }
+
+    function selectMention(user) {
+        const cursor = messageInput.selectionStart == null ? messageInput.value.length : messageInput.selectionStart;
+        const prefix = messageInput.value.slice(0, mentionAnchorIndex);
+        const suffix = messageInput.value.slice(cursor);
+        const mentionText = "@" + user + " ";
+        messageInput.value = prefix + mentionText + suffix;
+        const nextCursor = (prefix + mentionText).length;
+        messageInput.focus();
+        messageInput.setSelectionRange(nextCursor, nextCursor);
+        setPrivateTarget(user);
+        updateMessageCounter();
+        closeMentionList();
+        updateComposerState();
+    }
+
+    function getWebSocketUrl() {
+        const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+        return wsProtocol + "://" + window.location.host + "/ws-chat";
+    }
+
+    function parseDirectPrivateInput(rawText) {
+        const match = rawText.match(/^@([^\s@]+)\s+(.+)$/);
+        if (!match) {
+            return null;
+        }
+        return {
+            receiver: match[1],
+            content: match[2].trim()
+        };
+    }
+
+    function connect() {
+        stompClient = new StompJs.Client({
+            brokerURL: getWebSocketUrl(),
+            reconnectDelay: 0,
+            debug: function () {}
+        });
+
+        stompClient.onConnect = function () {
+            isConnected = true;
+            setConnectionState("Connected", "success");
+            updateComposerState();
+
+            stompClient.subscribe("/topic/public", function (frame) {
+                const message = JSON.parse(frame.body);
+                const parsed = formatMessage(message, "public");
+                appendMessage(parsed);
+                if (message.type === "JOIN" || message.type === "LEAVE") {
+                    requestOnlineUsers(true);
+                }
+            });
+
+            stompClient.subscribe("/user/queue/private", function (frame) {
+                const message = JSON.parse(frame.body);
+                const parsed = formatMessage(message, "private");
+                appendMessage(parsed);
+            });
+
+            stompClient.subscribe("/user/queue/error", function (frame) {
+                const message = JSON.parse(frame.body);
+                const parsed = formatMessage(message, "error");
+                appendMessage(parsed);
+            });
+
+            stompClient.subscribe("/user/queue/queryAll", function (frame) {
+                const message = JSON.parse(frame.body);
+                onlineUsers = parseUsers(message.content);
+                updateOnlineCount();
+                if (privateTarget && onlineUsers.indexOf(privateTarget) < 0) {
+                    appendMessage("Private target " + privateTarget + " is now offline. Switched to public mode.", "system");
+                    setPrivateTarget("");
+                }
+                if (hasActiveMentionTrigger()) {
+                    syncMentionFromInput();
+                } else if (mentionOpen) {
+                    closeMentionList();
+                }
+            });
+
+            appendMessage("Connected to room as " + username, "system");
+            requestOnlineUsers(true);
+        };
+
+        stompClient.onWebSocketError = function () {
+            isConnected = false;
+            setConnectionState("Offline", "error");
+            appendMessage("Connection failed. Please return to join page.", "error");
+            updateComposerState();
+        };
+
+        stompClient.onStompError = function () {
+            isConnected = false;
+            setConnectionState("Error", "error");
+            appendMessage("STOMP error occurred. Please return to join page.", "error");
+            updateComposerState();
+        };
+
+        stompClient.activate();
+    }
+
+    function sendMessage() {
+        if (!stompClient || !stompClient.connected) {
+            appendMessage("Not connected to server.", "error");
+            return;
+        }
+
+        const rawContent = messageInput.value.trim();
+        if (!rawContent) {
+            updateComposerState();
+            return;
+        }
+
+        const directPrivate = parseDirectPrivateInput(rawContent);
+        let receiver = privateTarget;
+        let content = rawContent;
+
+        if (!receiver && directPrivate) {
+            receiver = directPrivate.receiver;
+            content = directPrivate.content;
+            setPrivateTarget(receiver);
+        }
+
+        if (receiver && onlineUsers.length > 0 && onlineUsers.indexOf(receiver) < 0) {
+            appendMessage("Private target is offline. Switched to public mode.", "system");
+            setPrivateTarget("");
+            receiver = "";
+            content = rawContent;
+        }
+
+        if (receiver) {
+            stompClient.publish({
+                destination: "/Kichat/private",
+                body: JSON.stringify({
+                    type: "PRIVATE",
+                    sender: username,
+                    receiver: receiver,
+                    content: content
+                })
+            });
+        } else {
+            stompClient.publish({
+                destination: "/Kichat/chat",
+                body: JSON.stringify({
+                    type: "CHAT",
+                    sender: username,
+                    content: content
+                })
+            });
+        }
+
+        messageInput.value = "";
+        updateMessageCounter();
+        closeMentionList();
+        updateComposerState();
+        messageInput.focus();
+    }
+
+    function redirectToJoin() {
+        sessionStorage.removeItem("kichatUsername");
+        window.location.replace("/join");
+    }
+
+    function leaveRoom() {
+        if (leaving) {
+            return;
+        }
+
+        const confirmed = window.confirm("Are you sure you want to leave the room?");
+        if (!confirmed) {
+            return;
+        }
+
+        leaving = true;
+
+        if (stompClient && stompClient.connected) {
+            stompClient.publish({
+                destination: "/Kichat/leave",
+                body: JSON.stringify({
+                    type: "LEAVE",
+                    sender: username
+                })
+            });
+
+            setTimeout(function () {
+                Promise.resolve(stompClient.deactivate()).finally(function () {
+                    redirectToJoin();
+                });
+            }, 120);
+            return;
+        }
+
+        redirectToJoin();
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    themeToggleEl.addEventListener("click", function () {
+        applyTheme(getCurrentTheme() === "dark" ? "light" : "dark");
+    });
+    messageInput.addEventListener("keydown", function (event) {
+        if (mentionOpen) {
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                mentionActiveIndex++;
+                renderMentionList();
+                return;
+            }
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                mentionActiveIndex--;
+                renderMentionList();
+                return;
+            }
+            if (event.key === "Enter" || event.key === "Tab") {
+                event.preventDefault();
+                selectMention(mentionCandidates[mentionActiveIndex]);
+                return;
+            }
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closeMentionList();
+                return;
+            }
+        }
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+
+    messageInput.addEventListener("input", function () {
+        updateMessageCounter();
+        syncMentionFromInput();
+        updateComposerState();
+    });
+
+    messageInput.addEventListener("focus", function () {
+        requestOnlineUsers(false);
+    });
+
+    clearPrivateBtn.addEventListener("click", function () {
+        setPrivateTarget("");
+        closeMentionList();
+        updateComposerState();
+        messageInput.focus();
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!mentionListEl.contains(event.target) && event.target !== messageInput) {
+            closeMentionList();
+        }
+    });
+
+    leaveBtn.addEventListener("click", leaveRoom);
+
+    updateThemeToggle();
+    updateMessageCounter();
+    updateOnlineCount();
+    updateModeUi();
+    updateComposerState();
+    connect();
+</script>
+</body>
+</html>
