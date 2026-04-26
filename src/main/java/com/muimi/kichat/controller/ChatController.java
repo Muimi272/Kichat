@@ -3,7 +3,7 @@ package com.muimi.kichat.controller;
 import com.muimi.kichat.Service.UserService;
 import com.muimi.kichat.entity.ChatMessage;
 import com.muimi.kichat.entity.Type;
-import com.muimi.kichat.util.Kitimer;
+import club.muimi.Kitimer;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
