@@ -45,6 +45,13 @@
             --button-soft-text: #334155;
             --tag-neutral-bg: rgba(15, 23, 42, 0.06);
             --tag-neutral-text: #475569;
+            --username-prefix-color: #7f8faa;
+            --motion-snap: 180ms;
+            --motion-fast: 260ms;
+            --motion-normal: 340ms;
+            --motion-slow: 460ms;
+            --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-out-sharp: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         html[data-theme="dark"] {
@@ -73,6 +80,7 @@
             --button-soft-text: #e5eefc;
             --tag-neutral-bg: rgba(37, 99, 235, 0.18);
             --tag-neutral-text: #c3d1e8;
+            --username-prefix-color: #9ab2d9;
         }
 
         * {
@@ -145,6 +153,31 @@
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
             box-shadow: var(--shadow);
+        }
+
+        .chat-container::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.22), transparent 48%, rgba(56, 189, 248, 0.16));
+            opacity: 0;
+            transition: opacity var(--motion-slow) var(--ease-out-soft);
+        }
+
+        html.theme-switching .chat-container::after {
+            opacity: 0.58;
+        }
+
+        html.theme-switching body,
+        html.theme-switching .chat-container,
+        html.theme-switching .content-shell,
+        html.theme-switching .lobby-card,
+        html.theme-switching .composer-wrap,
+        html.theme-switching .jump-latest-btn,
+        html.theme-switching .input-wrap::before,
+        html.theme-switching #messages li {
+            transition: color var(--motion-slow) var(--ease-out-soft), background var(--motion-slow) var(--ease-out-soft), border-color var(--motion-slow) var(--ease-out-soft), box-shadow var(--motion-slow) var(--ease-out-soft);
         }
 
         .topbar {
@@ -253,11 +286,25 @@
         .leave-btn,
         .join-btn,
         .send-btn,
-        .ghost-btn {
+        .ghost-btn,
+        .jump-latest-btn {
+            position: relative;
+            overflow: hidden;
             border: none;
             font: inherit;
             cursor: pointer;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transform: translateY(0) scale(1);
+            will-change: transform, box-shadow;
+            transition:
+                transform var(--motion-fast) var(--ease-out-soft),
+                box-shadow var(--motion-fast) var(--ease-out-soft),
+                opacity var(--motion-snap) var(--ease-out-soft),
+                border-color var(--motion-fast) var(--ease-out-soft),
+                background var(--motion-fast) var(--ease-out-soft),
+                color var(--motion-fast) var(--ease-out-soft),
+                filter var(--motion-fast) var(--ease-out-soft);
         }
 
         .theme-toggle,
@@ -270,8 +317,8 @@
             border: 1px solid var(--surface-border-strong);
         }
 
-        .theme-toggle:hover,
-        .leave-btn:hover {
+        .theme-toggle:hover:not(:disabled),
+        .leave-btn:hover:not(:disabled) {
             transform: translateY(-1px);
             background: rgba(255, 255, 255, 0.18);
             border-color: rgba(255, 255, 255, 0.24);
@@ -409,10 +456,18 @@
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-faint);
+            color: var(--username-prefix-color);
             font-weight: 700;
             font-size: 18px;
+            opacity: 0.98;
+            z-index: 2;
+            transition: color var(--motion-fast) var(--ease-out-soft), opacity var(--motion-fast) var(--ease-out-soft);
             pointer-events: none;
+        }
+
+        .input-wrap:focus-within::before {
+            color: var(--username-prefix-color);
+            opacity: 0.98;
         }
 
         input {
@@ -438,6 +493,8 @@
         }
 
         #usernameInput {
+            position: relative;
+            z-index: 1;
             padding: 16px 18px 16px 42px;
             font-size: 15px;
         }
@@ -462,8 +519,52 @@
 
         .join-btn:hover:not(:disabled),
         .send-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
             box-shadow: 0 24px 42px rgba(37, 99, 235, 0.28);
+        }
+
+        .theme-toggle:focus-visible,
+        .leave-btn:focus-visible,
+        .join-btn:focus-visible,
+        .send-btn:focus-visible,
+        .ghost-btn:focus-visible,
+        .jump-latest-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+        }
+
+        .theme-toggle:active:not(:disabled),
+        .leave-btn:active:not(:disabled),
+        .join-btn:active:not(:disabled),
+        .send-btn:active:not(:disabled),
+        .ghost-btn:active:not(:disabled),
+        .jump-latest-btn:active:not(:disabled),
+        .theme-toggle.is-pressed,
+        .leave-btn.is-pressed,
+        .join-btn.is-pressed,
+        .send-btn.is-pressed,
+        .ghost-btn.is-pressed,
+        .jump-latest-btn.is-pressed {
+            transform: translateY(0) scale(0.975);
+            filter: saturate(0.98);
+        }
+
+        .theme-toggle:active:not(:disabled),
+        .leave-btn:active:not(:disabled),
+        .theme-toggle.is-pressed,
+        .leave-btn.is-pressed,
+        .ghost-btn:active:not(:disabled),
+        .ghost-btn.is-pressed,
+        .jump-latest-btn:active:not(:disabled),
+        .jump-latest-btn.is-pressed {
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        }
+
+        .join-btn:active:not(:disabled),
+        .send-btn:active:not(:disabled),
+        .join-btn.is-pressed,
+        .send-btn.is-pressed {
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
         }
 
         .join-btn:disabled,
@@ -530,6 +631,7 @@
             display: flex;
             overflow: hidden;
             padding: 20px 22px 0;
+            position: relative;
         }
 
         html[data-theme="dark"] .messages-shell {
@@ -562,17 +664,62 @@
             line-height: 1.65;
             box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
             border: 1px solid transparent;
-            animation: message-in 0.2s ease;
+            transform-origin: bottom center;
+            will-change: transform, opacity, filter;
+            animation: message-incoming var(--motion-normal) var(--ease-out-soft);
         }
 
-        @keyframes message-in {
+        #messages li.message-incoming {
+            animation-name: message-incoming;
+        }
+
+        #messages li.message-outgoing {
+            animation-name: message-outgoing;
+        }
+
+        #messages li.message-notice {
+            animation-name: message-notice;
+        }
+
+        #messages li.motion-done {
+            will-change: auto;
+        }
+
+        @keyframes message-incoming {
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform: translate3d(0, 14px, 0) scale(0.985);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+
+        @keyframes message-outgoing {
+            from {
+                opacity: 0;
+                transform: translate3d(10px, 12px, 0) scale(0.97);
+            }
+            70% {
+                transform: translate3d(0, -1px, 0) scale(1.01);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+
+        @keyframes message-notice {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 10px, 0) scale(0.98);
+                filter: blur(1px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+                filter: blur(0);
             }
         }
 
@@ -777,6 +924,7 @@
         }
 
         .ghost-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
             background: rgba(37, 99, 235, 0.04);
             border-color: rgba(37, 99, 235, 0.18);
         }
@@ -846,6 +994,39 @@
             color: var(--primary-strong);
         }
 
+        .jump-latest-btn {
+            position: absolute;
+            right: 18px;
+            bottom: 14px;
+            min-height: 38px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            background: var(--surface-strong);
+            color: var(--primary-strong);
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
+            z-index: 2;
+        }
+
+        .jump-latest-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
         @media (max-width: 820px) {
             body {
                 padding: 0;
@@ -912,6 +1093,11 @@
 
             .messages-shell {
                 padding: 16px 14px 0;
+            }
+
+            .jump-latest-btn {
+                right: 12px;
+                bottom: 10px;
             }
 
             .composer-wrap {
@@ -985,12 +1171,13 @@
                 <h2 id="roomTitle">Kichat Lobby</h2>
                 <div class="title-sub">
                     <span id="connectionState" class="header-chip connection-chip" data-tone="busy">Connecting</span>
-                    <span class="header-chip">User <strong id="usernameBadge">guest</strong></span>
-                    <span class="header-chip">Online <strong id="onlineCountHeader">0</strong></span>
+                    <span class="header-chip"><span id="userLabelText">User</span> <strong id="usernameBadge">guest</strong></span>
+                    <span class="header-chip"><span id="onlineLabelText">Online</span> <strong id="onlineCountHeader">0</strong></span>
                 </div>
             </div>
         </div>
         <div class="topbar-actions">
+            <button id="langToggle" class="theme-toggle" type="button">中文</button>
             <button id="themeToggle" class="theme-toggle" type="button">Dark mode</button>
             <button id="leaveBtn" class="leave-btn" type="button" hidden>Leave</button>
         </div>
@@ -1001,15 +1188,15 @@
             <div class="lobby-card">
                 <div class="lobby-head">
                     <div>
-                        <h3>Join the room</h3>
-                        <p>Stay on this page after joining so the same WebSocket session handles both join and chat.</p>
+                        <h3 id="lobbyTitle">Join the room</h3>
+                        <p id="lobbyDesc">Stay on this page after joining so the same WebSocket session handles both join and chat.</p>
                     </div>
                     <div id="lobbyPill" class="status-pill" data-tone="busy">Connecting</div>
                 </div>
 
                 <div class="field">
                     <div class="field-label-row">
-                        <label for="usernameInput">Username</label>
+                        <label id="usernameLabel" for="usernameInput">Username</label>
                         <span id="usernameCounter" class="counter">0 / 30</span>
                     </div>
                     <div class="input-wrap">
@@ -1029,6 +1216,7 @@
         <section id="chatPanel" class="chat-panel" hidden>
             <div class="messages-shell">
                 <ul id="messages"></ul>
+                <button id="jumpLatestBtn" class="jump-latest-btn" type="button" hidden>New messages</button>
             </div>
 
             <div class="composer-wrap">
@@ -1059,18 +1247,27 @@
     const roomTitle = document.getElementById("roomTitle");
     const usernameBadge = document.getElementById("usernameBadge");
     const onlineCountHeaderEl = document.getElementById("onlineCountHeader");
+    const userLabelTextEl = document.getElementById("userLabelText");
+    const onlineLabelTextEl = document.getElementById("onlineLabelText");
     const connectionStateEl = document.getElementById("connectionState");
+    const langToggleEl = document.getElementById("langToggle");
     const themeToggleEl = document.getElementById("themeToggle");
     const leaveBtn = document.getElementById("leaveBtn");
+    const chatContainerEl = document.querySelector(".chat-container");
+    const topbarEl = document.querySelector(".topbar");
     const lobbyShell = document.getElementById("lobbyShell");
     const lobbyPill = document.getElementById("lobbyPill");
     const usernameInput = document.getElementById("usernameInput");
+    const usernameLabelEl = document.getElementById("usernameLabel");
     const usernameCounterEl = document.getElementById("usernameCounter");
     const joinBtn = document.getElementById("joinBtn");
     const joinStatusEl = document.getElementById("joinStatus");
     const joinErrorEl = document.getElementById("joinError");
+    const lobbyTitleEl = document.getElementById("lobbyTitle");
+    const lobbyDescEl = document.getElementById("lobbyDesc");
     const chatPanel = document.getElementById("chatPanel");
     const messagesEl = document.getElementById("messages");
+    const jumpLatestBtn = document.getElementById("jumpLatestBtn");
     const modeLabel = document.getElementById("modeLabel");
     const clearPrivateBtn = document.getElementById("clearPrivateBtn");
     const messageInput = document.getElementById("messageInput");
@@ -1094,6 +1291,385 @@
     let mentionAnchorIndex = -1;
     let mentionActiveIndex = 0;
     let lastQueryAt = 0;
+    let incomingSinceDetached = 0;
+    let sendLocked = false;
+    let themeTransitionTimer = null;
+    let lastIncomingMessageAt = 0;
+    let lastOutgoingMessageAt = 0;
+    let currentLang = localStorage.getItem("kichatLang") === "zh" ? "zh" : "en";
+
+    const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const I18N = {
+        en: {
+            label: {
+                user: "User",
+                online: "Online",
+                username: "Username"
+            },
+            lobby: {
+                title: "Join the room",
+                desc: "Stay on this page after joining so the same WebSocket session handles both join and chat."
+            },
+            room: {
+                lobby: "Kichat Lobby",
+                joinTitle: "Kichat - Join",
+                userTitle: "Kichat - {name}"
+            },
+            theme: {
+                dark: "Dark mode",
+                light: "Light mode",
+                ariaDark: "Switch to dark mode",
+                ariaLight: "Switch to light mode"
+            },
+            button: {
+                lang: "中文",
+                langAria: "Switch to Chinese",
+                leave: "Leave",
+                leaving: "Leaving...",
+                joining: "Joining...",
+                joined: "Joined",
+                join: "Join Room",
+                waiting: "Waiting for Server",
+                send: "Send",
+                backPublic: "Back to Public"
+            },
+            state: {
+                connecting: "Connecting",
+                connected: "Connected",
+                inRoom: "In Room",
+                ready: "Ready",
+                offline: "Offline",
+                error: "Error",
+                joining: "Joining"
+            },
+            status: {
+                connectingServer: "Connecting to chat server...",
+                connectedEnter: "Connected. Enter a username to join.",
+                joining: "Joining...",
+                joinedReady: "Joined successfully. Chat is ready.",
+                retryUsername: "Connected. Please try another username.",
+                joinTimeout: "Join response timeout. Please retry.",
+                leaveSuccess: "You left the room. Join again when ready.",
+                lostRejoin: "Connection lost. Rejoin is required.",
+                errorRejoin: "Connection error. Rejoin is required.",
+                failedConnect: "Failed to connect. Refresh and retry.",
+                connectionError: "Connection error. Refresh and retry."
+            },
+            error: {
+                notConnected: "Not connected to server.",
+                usernameEmpty: "Username cannot be empty.",
+                joinFailed: "Join failed.",
+                noJoinResponse: "No response received. Try a different username.",
+                wsFailed: "WebSocket connection failed.",
+                stompError: "STOMP error.",
+                unknown: "Unknown error"
+            },
+            message: {
+                noticeSystem: "System",
+                noticeError: "Error",
+                noticeJoin: "Joined",
+                noticeLeave: "Left",
+                channelPrivate: "Private",
+                channelPublic: "Public",
+                you: "You",
+                unknown: "Unknown",
+                toYou: "To you",
+                toUser: "To @{user}",
+                joinedRoom: "{user} joined the room.",
+                leftRoom: "{user} left the room.",
+                privateOffline: "Private target {user} is now offline. Switched to public mode.",
+                privateOfflineSimple: "Private target is offline. Switched to public mode.",
+                newOne: "New message",
+                newMany: "{count} new messages"
+            },
+            placeholder: {
+                username: "Choose a display name",
+                message: "Message",
+                messageTo: "Message @{user}"
+            },
+            mode: {
+                public: "Public",
+                private: "Private · @{user}"
+            },
+            dialog: {
+                leaveConfirm: "Are you sure you want to leave the room?"
+            },
+            server: {
+                typeError: "Type error",
+                illegalUsername: "Illegal username",
+                userExists: "User already exists.",
+                userDeletionFailed: "User deletion failed.",
+                userMissing: "User does not exist.",
+                identityFailed: "User identity verification failed.",
+                emptyMessage: "Do not send empty messages"
+            }
+        },
+        zh: {
+            label: {
+                user: "用户",
+                online: "在线",
+                username: "昵称"
+            },
+            lobby: {
+                title: "加入聊天室",
+                desc: "加入后请保持此页面打开，使用同一 WebSocket 会话完成加入和聊天。"
+            },
+            room: {
+                lobby: "Kichat 大厅",
+                joinTitle: "Kichat - 加入",
+                userTitle: "Kichat - {name}"
+            },
+            theme: {
+                dark: "深色模式",
+                light: "浅色模式",
+                ariaDark: "切换到深色模式",
+                ariaLight: "切换到浅色模式"
+            },
+            button: {
+                lang: "English",
+                langAria: "切换到英文",
+                leave: "退出",
+                leaving: "退出中...",
+                joining: "加入中...",
+                joined: "已加入",
+                join: "加入聊天室",
+                waiting: "等待服务器",
+                send: "发送",
+                backPublic: "回到公聊"
+            },
+            state: {
+                connecting: "连接中",
+                connected: "已连接",
+                inRoom: "房间中",
+                ready: "就绪",
+                offline: "离线",
+                error: "错误",
+                joining: "加入中"
+            },
+            status: {
+                connectingServer: "正在连接聊天服务器...",
+                connectedEnter: "连接成功，请输入昵称加入。",
+                joining: "正在加入...",
+                joinedReady: "加入成功，聊天已就绪。",
+                retryUsername: "已连接，请尝试其他昵称。",
+                joinTimeout: "加入响应超时，请重试。",
+                leaveSuccess: "你已退出聊天室，随时可再次加入。",
+                lostRejoin: "连接已断开，需要重新加入。",
+                errorRejoin: "连接异常，需要重新加入。",
+                failedConnect: "连接失败，请刷新后重试。",
+                connectionError: "连接异常，请刷新后重试。"
+            },
+            error: {
+                notConnected: "未连接到服务器。",
+                usernameEmpty: "昵称不能为空。",
+                joinFailed: "加入失败。",
+                noJoinResponse: "未收到响应，请尝试其他昵称。",
+                wsFailed: "WebSocket 连接失败。",
+                stompError: "STOMP 协议错误。",
+                unknown: "未知错误"
+            },
+            message: {
+                noticeSystem: "系统",
+                noticeError: "错误",
+                noticeJoin: "加入",
+                noticeLeave: "退出",
+                channelPrivate: "私聊",
+                channelPublic: "公聊",
+                you: "你",
+                unknown: "未知",
+                toYou: "发给你",
+                toUser: "发给 @{user}",
+                joinedRoom: "{user} 已加入聊天室。",
+                leftRoom: "{user} 已退出聊天室。",
+                privateOffline: "私聊对象 {user} 已离线，已切换为公聊模式。",
+                privateOfflineSimple: "私聊对象已离线，已切换为公聊模式。",
+                newOne: "新消息",
+                newMany: "{count} 条新消息"
+            },
+            placeholder: {
+                username: "输入你的昵称",
+                message: "输入消息",
+                messageTo: "发送给 @{user}"
+            },
+            mode: {
+                public: "公聊",
+                private: "私聊 · @{user}"
+            },
+            dialog: {
+                leaveConfirm: "确定要退出聊天室吗？"
+            },
+            server: {
+                typeError: "消息类型错误。",
+                illegalUsername: "昵称不合法。",
+                userExists: "用户已存在。",
+                userDeletionFailed: "用户退出失败。",
+                userMissing: "用户不存在。",
+                identityFailed: "用户身份校验失败。",
+                emptyMessage: "请不要发送空消息。"
+            }
+        }
+    };
+
+    const serverMessageKeyMap = {
+        "Type error": "server.typeError",
+        "Illegal username": "server.illegalUsername",
+        "User already exists.": "server.userExists",
+        "User deletion failed.": "server.userDeletionFailed",
+        "User does not exist.": "server.userMissing",
+        "User identity verification failed.": "server.identityFailed",
+        "Do not send empty messages": "server.emptyMessage"
+    };
+
+    function t(path, vars) {
+        const segments = path.split(".");
+        let value = I18N[currentLang];
+        for (let index = 0; index < segments.length; index++) {
+            if (!value) {
+                return path;
+            }
+            value = value[segments[index]];
+        }
+        if (typeof value !== "string") {
+            return path;
+        }
+        if (!vars) {
+            return value;
+        }
+        return value.replace(/\{(\w+)\}/g, function (_, key) {
+            return vars[key] == null ? "" : String(vars[key]);
+        });
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang === "zh" ? "zh" : "en";
+        localStorage.setItem("kichatLang", currentLang);
+        applyLanguage();
+    }
+
+    function localized(key, vars) {
+        return {
+            key: key,
+            vars: vars || null
+        };
+    }
+
+    function applyLocalizedText(el, value) {
+        if (!el) {
+            return;
+        }
+
+        if (!value) {
+            delete el.dataset.i18nKey;
+            delete el.dataset.i18nVars;
+            el.textContent = "";
+            return;
+        }
+
+        if (typeof value === "object" && value.key) {
+            el.dataset.i18nKey = value.key;
+            el.dataset.i18nVars = value.vars ? JSON.stringify(value.vars) : "";
+            el.textContent = t(value.key, value.vars);
+            return;
+        }
+
+        delete el.dataset.i18nKey;
+        delete el.dataset.i18nVars;
+        el.textContent = String(value);
+    }
+
+    function refreshLocalizedText(el) {
+        if (!el || !el.dataset.i18nKey) {
+            return;
+        }
+
+        let vars = null;
+        if (el.dataset.i18nVars) {
+            try {
+                vars = JSON.parse(el.dataset.i18nVars);
+            } catch (error) {
+                vars = null;
+            }
+        }
+        el.textContent = t(el.dataset.i18nKey, vars);
+    }
+
+    function localizeServerMessage(content) {
+        const key = serverMessageKeyMap[content || ""];
+        if (key) {
+            return localized(key);
+        }
+        return content || t("error.unknown");
+    }
+
+    function updateLeaveButton() {
+        leaveBtn.disabled = leaving;
+        leaveBtn.textContent = leaving ? t("button.leaving") : t("button.leave");
+    }
+
+    function setButtonPressed(button, pressed) {
+        if (!button || button.disabled) {
+            return;
+        }
+        button.classList.toggle("is-pressed", pressed);
+    }
+
+    function bindButtonPressFeedback(button) {
+        if (!button) {
+            return;
+        }
+
+        button.addEventListener("pointerdown", function () {
+            setButtonPressed(button, true);
+        });
+        button.addEventListener("pointerup", function () {
+            setButtonPressed(button, false);
+        });
+        button.addEventListener("pointerleave", function () {
+            setButtonPressed(button, false);
+        });
+        button.addEventListener("pointercancel", function () {
+            setButtonPressed(button, false);
+        });
+        button.addEventListener("blur", function () {
+            setButtonPressed(button, false);
+        });
+        button.addEventListener("keydown", function (event) {
+            if (event.key === " " || event.key === "Enter") {
+                setButtonPressed(button, true);
+            }
+        });
+        button.addEventListener("keyup", function (event) {
+            if (event.key === " " || event.key === "Enter") {
+                setButtonPressed(button, false);
+            }
+        });
+    }
+
+    function applyLanguage() {
+        document.documentElement.lang = currentLang === "zh" ? "zh-Hans" : "en";
+        langToggleEl.textContent = t("button.lang");
+        langToggleEl.setAttribute("aria-label", t("button.langAria"));
+        userLabelTextEl.textContent = t("label.user");
+        onlineLabelTextEl.textContent = t("label.online");
+        lobbyTitleEl.textContent = t("lobby.title");
+        lobbyDescEl.textContent = t("lobby.desc");
+        usernameLabelEl.textContent = t("label.username");
+        usernameInput.placeholder = t("placeholder.username");
+        messageInput.setAttribute("aria-label", t("placeholder.message"));
+        sendBtn.textContent = t("button.send");
+        clearPrivateBtn.textContent = t("button.backPublic");
+        refreshLocalizedText(connectionStateEl);
+        refreshLocalizedText(lobbyPill);
+        refreshLocalizedText(joinStatusEl);
+        refreshLocalizedText(joinErrorEl);
+        updateThemeToggle();
+        updateLeaveButton();
+        updateHeader();
+        updateJoinButton();
+        updateModeUi();
+        updateJumpLatestButton();
+    }
 
     function getCurrentTheme() {
         return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
@@ -1101,14 +1677,193 @@
 
     function updateThemeToggle() {
         const currentTheme = getCurrentTheme();
-        themeToggleEl.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
-        themeToggleEl.setAttribute("aria-label", currentTheme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+        themeToggleEl.textContent = currentTheme === "dark" ? t("theme.light") : t("theme.dark");
+        themeToggleEl.setAttribute("aria-label", currentTheme === "dark" ? t("theme.ariaLight") : t("theme.ariaDark"));
+    }
+
+    function playThemeTransition() {
+        if (reducedMotionMedia.matches) {
+            return;
+        }
+        document.documentElement.classList.add("theme-switching");
+        clearTimeout(themeTransitionTimer);
+        themeTransitionTimer = setTimeout(function () {
+            document.documentElement.classList.remove("theme-switching");
+        }, 460);
     }
 
     function applyTheme(theme) {
-        document.documentElement.setAttribute("data-theme", theme);
-        localStorage.setItem("kichatTheme", theme);
-        updateThemeToggle();
+        if (theme === getCurrentTheme()) {
+            return;
+        }
+
+        playThemeTransition();
+        const commitTheme = function () {
+            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem("kichatTheme", theme);
+            updateThemeToggle();
+        };
+
+        if (typeof document.startViewTransition === "function" && !reducedMotionMedia.matches) {
+            document.startViewTransition(function () {
+                commitTheme();
+            });
+            return;
+        }
+
+        commitTheme();
+    }
+
+    function stopAnimations(element) {
+        if (!element || typeof element.getAnimations !== "function") {
+            return;
+        }
+        element.getAnimations().forEach(function (animation) {
+            animation.cancel();
+        });
+    }
+
+    function animatePanelSwitch(panelIn, panelOut, nextView) {
+        if (!panelIn || !panelOut) {
+            return;
+        }
+
+        if (reducedMotionMedia.matches) {
+            panelIn.hidden = false;
+            panelOut.hidden = true;
+            return;
+        }
+
+        stopAnimations(panelIn);
+        stopAnimations(panelOut);
+        panelIn.hidden = false;
+        if (panelOut.hidden) {
+            return;
+        }
+
+        const enteringChat = nextView === "chat";
+        const inFrames = enteringChat
+            ? [
+                { opacity: 0, transform: "translateY(22px) scale(0.975)", filter: "blur(10px)" },
+                { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0px)" }
+            ]
+            : [
+                { opacity: 0, transform: "translateY(-18px) scale(1.012)", filter: "blur(8px)" },
+                { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0px)" }
+            ];
+        const outFrames = enteringChat
+            ? [
+                { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0px)" },
+                { opacity: 0, transform: "translateY(-20px) scale(0.97)", filter: "blur(8px)" }
+            ]
+            : [
+                { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0px)" },
+                { opacity: 0, transform: "translateY(18px) scale(0.985)", filter: "blur(10px)" }
+            ];
+
+        panelIn.style.pointerEvents = "none";
+        panelOut.style.pointerEvents = "none";
+        const inAnimation = panelIn.animate(inFrames, {
+            duration: enteringChat ? 420 : 360,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            fill: "both"
+        });
+
+        const outAnimation = panelOut.animate(outFrames, {
+            duration: enteringChat ? 260 : 280,
+            easing: "cubic-bezier(0.4, 0, 1, 1)",
+            fill: "both"
+        });
+
+        const accentTarget = panelIn.querySelector(enteringChat ? ".composer-wrap" : ".lobby-card");
+        if (accentTarget) {
+            stopAnimations(accentTarget);
+            accentTarget.animate([
+                { opacity: 0, transform: enteringChat ? "translateY(16px)" : "translateY(-12px)" },
+                { opacity: 1, transform: "translateY(0)" }
+            ], {
+                duration: enteringChat ? 440 : 380,
+                delay: enteringChat ? 70 : 40,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                fill: "both"
+            });
+        }
+
+        inAnimation.addEventListener("finish", function () {
+            panelIn.style.pointerEvents = "";
+            panelIn.style.opacity = "";
+            panelIn.style.transform = "";
+            panelIn.style.filter = "";
+        });
+
+        outAnimation.addEventListener("finish", function () {
+            panelOut.hidden = true;
+            panelOut.style.pointerEvents = "";
+            panelOut.style.opacity = "";
+            panelOut.style.transform = "";
+            panelOut.style.filter = "";
+        });
+    }
+
+    function playJoinMotion() {
+        if (reducedMotionMedia.matches) {
+            return;
+        }
+        if (chatContainerEl) {
+            chatContainerEl.animate([
+                { transform: "translateY(0) scale(1)", boxShadow: "var(--shadow)" },
+                { transform: "translateY(-2px) scale(1.003)", boxShadow: "0 36px 88px rgba(37, 65, 120, 0.26)" },
+                { transform: "translateY(0) scale(1)", boxShadow: "var(--shadow)" }
+            ], {
+                duration: 460,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)"
+            });
+        }
+        if (topbarEl) {
+            topbarEl.animate([
+                { filter: "saturate(1)" },
+                { filter: "saturate(1.18)" },
+                { filter: "saturate(1)" }
+            ], {
+                duration: 420,
+                easing: "ease"
+            });
+        }
+        if (chatPanel) {
+            chatPanel.animate([
+                { transform: "translateY(10px)", opacity: 0.72 },
+                { transform: "translateY(0)", opacity: 1 }
+            ], {
+                duration: 420,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)"
+            });
+        }
+    }
+
+    function playLeaveMotion() {
+        if (reducedMotionMedia.matches) {
+            return;
+        }
+        if (chatContainerEl) {
+            chatContainerEl.animate([
+                { transform: "translateY(0) scale(1)", boxShadow: "var(--shadow)" },
+                { transform: "translateY(3px) scale(0.998)", boxShadow: "0 24px 60px rgba(15, 23, 42, 0.16)" },
+                { transform: "translateY(0) scale(1)", boxShadow: "var(--shadow)" }
+            ], {
+                duration: 380,
+                easing: "cubic-bezier(0.16, 1, 0.3, 1)"
+            });
+        }
+        if (topbarEl) {
+            topbarEl.animate([
+                { filter: "saturate(1)" },
+                { filter: "saturate(0.9) brightness(0.98)" },
+                { filter: "saturate(1)" }
+            ], {
+                duration: 340,
+                easing: "ease"
+            });
+        }
     }
 
     function getWebSocketUrl() {
@@ -1117,29 +1872,29 @@
     }
 
     function updateHeader() {
-        const displayUser = currentUsername || "guest";
-        roomTitle.textContent = currentUsername ? "Kichat - " + currentUsername : "Kichat Lobby";
-        document.title = currentUsername ? "Kichat - " + currentUsername : "Kichat - Join";
+        const displayUser = currentUsername || (currentLang === "zh" ? "访客" : "guest");
+        roomTitle.textContent = currentUsername ? t("room.userTitle", { name: currentUsername }) : t("room.lobby");
+        document.title = currentUsername ? t("room.userTitle", { name: currentUsername }) : t("room.joinTitle");
         usernameBadge.textContent = displayUser;
     }
 
     function setConnectionState(text, tone) {
-        connectionStateEl.textContent = text;
+        applyLocalizedText(connectionStateEl, text);
         connectionStateEl.dataset.tone = tone;
     }
 
     function setLobbyPill(text, tone) {
-        lobbyPill.textContent = text;
+        applyLocalizedText(lobbyPill, text);
         lobbyPill.dataset.tone = tone;
     }
 
     function setJoinStatus(text, tone) {
-        joinStatusEl.textContent = text;
+        applyLocalizedText(joinStatusEl, text);
         joinStatusEl.dataset.tone = tone;
     }
 
     function setJoinError(text) {
-        joinErrorEl.textContent = text;
+        applyLocalizedText(joinErrorEl, text);
     }
 
     function clearJoinTimeout() {
@@ -1158,14 +1913,14 @@
         const hasUsernameValue = usernameInput.value.trim().length > 0;
         joinBtn.disabled = !isConnected || isJoining || hasJoined || !hasUsernameValue;
         if (hasJoined) {
-            joinBtn.textContent = "Joined";
+            joinBtn.textContent = t("button.joined");
             return;
         }
         if (isJoining) {
-            joinBtn.textContent = "Joining...";
+            joinBtn.textContent = t("button.joining");
             return;
         }
-        joinBtn.textContent = isConnected ? "Join Room" : "Waiting for Server";
+        joinBtn.textContent = isConnected ? t("button.join") : t("button.waiting");
     }
 
     function updateMessageCounter() {
@@ -1178,22 +1933,22 @@
 
     function updateComposerState() {
         const hasContent = messageInput.value.trim().length > 0;
-        sendBtn.disabled = !isConnected || !hasJoined || !hasContent;
+        sendBtn.disabled = !isConnected || !hasJoined || !hasContent || sendLocked;
         messageInput.disabled = !isConnected || !hasJoined;
         if (privateTarget) {
-            messageInput.placeholder = "Message @" + privateTarget;
+            messageInput.placeholder = t("placeholder.messageTo", { user: privateTarget });
             return;
         }
-        messageInput.placeholder = "Message";
+        messageInput.placeholder = t("placeholder.message");
     }
 
     function updateModeUi() {
         if (privateTarget) {
-            modeLabel.textContent = "Private · @" + privateTarget;
+            modeLabel.textContent = t("mode.private", { user: privateTarget });
             modeLabel.classList.add("mode-private");
             clearPrivateBtn.hidden = false;
         } else {
-            modeLabel.textContent = "Public";
+            modeLabel.textContent = t("mode.public");
             modeLabel.classList.remove("mode-private");
             clearPrivateBtn.hidden = true;
         }
@@ -1205,18 +1960,25 @@
         updateModeUi();
     }
 
-    function showLobby() {
-        lobbyShell.hidden = false;
-        chatPanel.hidden = true;
+    function showLobby(skipMotion) {
+        if (skipMotion) {
+            lobbyShell.hidden = false;
+            chatPanel.hidden = true;
+        } else {
+            animatePanelSwitch(lobbyShell, chatPanel, "lobby");
+            playLeaveMotion();
+        }
         leaveBtn.hidden = true;
+        updateLeaveButton();
         updateJoinButton();
     }
 
     function showChat() {
-        lobbyShell.hidden = true;
-        chatPanel.hidden = false;
+        animatePanelSwitch(chatPanel, lobbyShell, "chat");
         leaveBtn.hidden = false;
+        updateLeaveButton();
         updateComposerState();
+        playJoinMotion();
         requestAnimationFrame(function () {
             scrollMessagesToBottom("auto");
         });
@@ -1235,7 +1997,7 @@
         }
 
         if (!rawTime) {
-            return new Intl.DateTimeFormat("en-GB", options).format(now);
+            return new Intl.DateTimeFormat(currentLang === "zh" ? "zh-HK" : "en-GB", options).format(now);
         }
 
         if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(rawTime)) {
@@ -1251,7 +2013,7 @@
 
         const parsed = new Date(rawTime);
         if (!isNaN(parsed.getTime())) {
-            return new Intl.DateTimeFormat("en-GB", options).format(parsed);
+            return new Intl.DateTimeFormat(currentLang === "zh" ? "zh-HK" : "en-GB", options).format(parsed);
         }
 
         return rawTime;
@@ -1264,10 +2026,23 @@
     }
 
     function scrollMessagesToBottom(behavior) {
+        const useSmooth = behavior === "smooth" && !reducedMotionMedia.matches;
         messagesEl.scrollTo({
             top: messagesEl.scrollHeight,
-            behavior: behavior === "smooth" ? "smooth" : "auto"
+            behavior: useSmooth ? "smooth" : "auto"
         });
+    }
+
+    function updateJumpLatestButton() {
+        jumpLatestBtn.hidden = incomingSinceDetached <= 0;
+        jumpLatestBtn.textContent = incomingSinceDetached > 1
+            ? t("message.newMany", { count: incomingSinceDetached })
+            : t("message.newOne");
+    }
+
+    function clearDetachedCounter() {
+        incomingSinceDetached = 0;
+        updateJumpLatestButton();
     }
 
     function appendMessage(messageView, cssClass) {
@@ -1275,16 +2050,48 @@
             ? {
                 kind: "notice",
                 cssClass: cssClass || "system",
-                badge: cssClass === "error" ? "Error" : "System",
+                badge: cssClass === "error" ? t("message.noticeError") : t("message.noticeSystem"),
                 body: messageView,
                 time: formatDisplayTime("", true)
             }
             : messageView;
+        const isOutgoingMessage = view.cssClass === "public-out" || view.cssClass === "private-out";
         const shouldStickToBottom = isNearMessagesBottom();
+        const now = Date.now();
         const item = document.createElement("li");
         if (view.cssClass) {
             item.classList.add(view.cssClass);
         }
+
+        if (view.kind === "notice") {
+            item.classList.add("message-notice");
+            if (!reducedMotionMedia.matches) {
+                item.style.animationDuration = "220ms";
+            }
+        } else {
+            item.classList.add(isOutgoingMessage ? "message-outgoing" : "message-incoming");
+            if (!reducedMotionMedia.matches) {
+                if (isOutgoingMessage) {
+                    const burstGapOut = now - lastOutgoingMessageAt;
+                    const burstDelayOut = burstGapOut < 220 ? Math.min(70, Math.max(16, 220 - burstGapOut)) : 0;
+                    item.style.animationDuration = "260ms";
+                    item.style.animationDelay = burstDelayOut + "ms";
+                    lastOutgoingMessageAt = now;
+                } else {
+                    const burstGapIn = now - lastIncomingMessageAt;
+                    const burstDelayIn = burstGapIn < 220 ? Math.min(90, Math.max(18, 220 - burstGapIn)) : 0;
+                    item.style.animationDuration = "340ms";
+                    item.style.animationDelay = burstDelayIn + "ms";
+                    lastIncomingMessageAt = now;
+                }
+            }
+        }
+
+        item.addEventListener("animationend", function () {
+            item.classList.add("motion-done");
+            item.style.animationDelay = "";
+            item.style.animationDuration = "";
+        }, { once: true });
 
         if (view.kind === "notice") {
             const badge = document.createElement("span");
@@ -1341,10 +2148,14 @@
         }
 
         messagesEl.appendChild(item);
-        const isOutgoingMessage = view.cssClass === "public-out" || view.cssClass === "private-out";
         if (shouldStickToBottom || isOutgoingMessage) {
             scrollMessagesToBottom(isOutgoingMessage ? "smooth" : "auto");
+            clearDetachedCounter();
+            return;
         }
+
+        incomingSinceDetached++;
+        updateJumpLatestButton();
     }
 
     function formatMessage(message, channel) {
@@ -1352,44 +2163,49 @@
             return {
                 kind: "notice",
                 cssClass: "system",
-                badge: message.type === "JOIN" ? "Joined" : "Left",
-                body: message.content || "System message",
+                badge: message.type === "JOIN" ? t("message.noticeJoin") : t("message.noticeLeave"),
+                body: message.sender
+                    ? t(message.type === "JOIN" ? "message.joinedRoom" : "message.leftRoom", { user: message.sender })
+                    : (message.content || t("message.noticeSystem")),
                 time: formatDisplayTime(message.time, true)
             };
         }
 
         if (message.type === "ERROR") {
+            const errorMessage = localizeServerMessage(message.content);
             return {
                 kind: "notice",
                 cssClass: "error",
-                badge: "Error",
-                body: message.content || "Unknown error",
+                badge: t("message.noticeError"),
+                body: typeof errorMessage === "string"
+                    ? errorMessage
+                    : t(errorMessage.key, errorMessage.vars),
                 time: formatDisplayTime(message.time, true)
             };
         }
 
         if (channel === "private") {
-            const sender = message.sender || "Unknown";
-            const receiver = message.receiver || "Unknown";
+            const sender = message.sender || t("message.unknown");
+            const receiver = message.receiver || t("message.unknown");
             const isOutgoing = sender === currentUsername;
             return {
                 kind: "chat",
                 cssClass: isOutgoing ? "private-out" : "private-in",
-                author: isOutgoing ? "You" : sender,
-                channel: "Private",
-                context: isOutgoing ? "To @" + receiver : "To you",
+                author: isOutgoing ? t("message.you") : sender,
+                channel: t("message.channelPrivate"),
+                context: isOutgoing ? t("message.toUser", { user: receiver }) : t("message.toYou"),
                 time: formatDisplayTime(message.time, false),
                 body: message.content || ""
             };
         }
 
-        const sender = message.sender || "Unknown";
+        const sender = message.sender || t("message.unknown");
         const isOutgoing = sender === currentUsername;
         return {
             kind: "chat",
             cssClass: isOutgoing ? "public-out" : "public",
-            author: isOutgoing ? "You" : sender,
-            channel: "Public",
+            author: isOutgoing ? t("message.you") : sender,
+            channel: t("message.channelPublic"),
             context: null,
             time: formatDisplayTime(message.time, false),
             body: message.content || ""
@@ -1534,6 +2350,7 @@
         closeMentionList();
         setPrivateTarget("");
         onlineUsers = [];
+        clearDetachedCounter();
         updateOnlineCount();
         updateMessageCounter();
         updateComposerState();
@@ -1548,9 +2365,9 @@
         clearJoinTimeout();
         sessionStorage.setItem("kichatUsername", username);
         updateHeader();
-        setConnectionState("Connected", "success");
-        setLobbyPill("In Room", "success");
-        setJoinStatus("Joined successfully. Chat is ready.", "success");
+        setConnectionState(localized("state.connected"), "success");
+        setLobbyPill(localized("state.inRoom"), "success");
+        setJoinStatus(localized("status.joinedReady"), "success");
         setJoinError("");
         showChat();
         updateJoinButton();
@@ -1577,7 +2394,7 @@
         }
         updateUsernameUi();
         setPrivateTarget("");
-        setLobbyPill(isConnected ? "Connected" : "Offline", isConnected ? "success" : "error");
+        setLobbyPill(isConnected ? localized("state.connected") : localized("state.offline"), isConnected ? "success" : "error");
         setJoinStatus(message, tone);
         setJoinError("");
         showLobby();
@@ -1588,9 +2405,9 @@
             return;
         }
 
-        setConnectionState("Connecting", "busy");
-        setLobbyPill("Connecting", "busy");
-        setJoinStatus("Connecting to chat server...", "busy");
+        setConnectionState(localized("state.connecting"), "busy");
+        setLobbyPill(localized("state.connecting"), "busy");
+        setJoinStatus(localized("status.connectingServer"), "busy");
         updateJoinButton();
 
         stompClient = new StompJs.Client({
@@ -1601,10 +2418,10 @@
 
         stompClient.onConnect = function () {
             isConnected = true;
-            setConnectionState(hasJoined ? "Connected" : "Ready", hasJoined ? "success" : "busy");
-            setLobbyPill(hasJoined ? "In Room" : "Connected", hasJoined ? "success" : "success");
+            setConnectionState(hasJoined ? localized("state.connected") : localized("state.ready"), hasJoined ? "success" : "busy");
+            setLobbyPill(hasJoined ? localized("state.inRoom") : localized("state.connected"), "success");
             if (!hasJoined) {
-                setJoinStatus("Connected. Enter a username to join.", "success");
+                setJoinStatus(localized("status.connectedEnter"), "success");
             }
             updateJoinButton();
             updateComposerState();
@@ -1639,9 +2456,9 @@
                 clearJoinTimeout();
                 if (!hasJoined) {
                     isJoining = false;
-                    setLobbyPill("Connected", "success");
-                    setJoinStatus("Connected. Please try another username.", "error");
-                    setJoinError(message.content || "Join failed.");
+                    setLobbyPill(localized("state.connected"), "success");
+                    setJoinStatus(localized("status.retryUsername"), "error");
+                    setJoinError(message.content ? localizeServerMessage(message.content) : localized("error.joinFailed"));
                     updateJoinButton();
                     return;
                 }
@@ -1656,7 +2473,7 @@
                 onlineUsers = parseUsers(message.content);
                 updateOnlineCount();
                 if (privateTarget && onlineUsers.indexOf(privateTarget) < 0) {
-                    appendMessage("Private target " + privateTarget + " is now offline. Switched to public mode.", "system");
+                    appendMessage(t("message.privateOffline", { user: privateTarget }), "system");
                     setPrivateTarget("");
                 }
                 if (hasActiveMentionTrigger()) {
@@ -1672,15 +2489,15 @@
             clearJoinTimeout();
             updateJoinButton();
             updateComposerState();
-            setConnectionState("Offline", "error");
-            setLobbyPill("Offline", "error");
+            setConnectionState(localized("state.offline"), "error");
+            setLobbyPill(localized("state.offline"), "error");
             if (hasJoined) {
-                returnToLobby("Connection lost. Rejoin is required.", "error", currentUsername);
-                setJoinError("WebSocket connection failed.");
+                returnToLobby(localized("status.lostRejoin"), "error", currentUsername);
+                setJoinError(localized("error.wsFailed"));
                 return;
             }
-            setJoinStatus("Failed to connect. Refresh and retry.", "error");
-            setJoinError("WebSocket connection failed.");
+            setJoinStatus(localized("status.failedConnect"), "error");
+            setJoinError(localized("error.wsFailed"));
         };
 
         stompClient.onStompError = function () {
@@ -1688,15 +2505,15 @@
             clearJoinTimeout();
             updateJoinButton();
             updateComposerState();
-            setConnectionState("Error", "error");
-            setLobbyPill("Error", "error");
+            setConnectionState(localized("state.error"), "error");
+            setLobbyPill(localized("state.error"), "error");
             if (hasJoined) {
-                returnToLobby("Connection error. Rejoin is required.", "error", currentUsername);
-                setJoinError("STOMP error.");
+                returnToLobby(localized("status.errorRejoin"), "error", currentUsername);
+                setJoinError(localized("error.stompError"));
                 return;
             }
-            setJoinStatus("Connection error. Refresh and retry.", "error");
-            setJoinError("STOMP error.");
+            setJoinStatus(localized("status.connectionError"), "error");
+            setJoinError(localized("error.stompError"));
         };
 
         stompClient.activate();
@@ -1704,13 +2521,13 @@
 
     function sendJoin() {
         if (!stompClient || !stompClient.connected) {
-            setJoinError("Not connected to server.");
+            setJoinError(localized("error.notConnected"));
             return;
         }
 
         const username = usernameInput.value.trim();
         if (!username) {
-            setJoinError("Username cannot be empty.");
+            setJoinError(localized("error.usernameEmpty"));
             updateJoinButton();
             return;
         }
@@ -1718,16 +2535,16 @@
         pendingUsername = username;
         isJoining = true;
         setJoinError("");
-        setLobbyPill("Joining", "busy");
-        setJoinStatus("Joining...", "busy");
+        setLobbyPill(localized("state.joining"), "busy");
+        setJoinStatus(localized("status.joining"), "busy");
         updateJoinButton();
 
         clearJoinTimeout();
         joinTimeoutHandle = setTimeout(function () {
             isJoining = false;
-            setLobbyPill("Connected", "success");
-            setJoinStatus("Join response timeout. Please retry.", "error");
-            setJoinError("No response received. Try a different username.");
+            setLobbyPill(localized("state.connected"), "success");
+            setJoinStatus(localized("status.joinTimeout"), "error");
+            setJoinError(localized("error.noJoinResponse"));
             updateJoinButton();
         }, 6000);
 
@@ -1742,7 +2559,11 @@
 
     function sendMessage() {
         if (!stompClient || !stompClient.connected || !hasJoined || !currentUsername) {
-            appendMessage("Not connected to server.", "error");
+            appendMessage(t("error.notConnected"), "error");
+            return;
+        }
+
+        if (sendLocked) {
             return;
         }
 
@@ -1763,7 +2584,7 @@
         }
 
         if (receiver && onlineUsers.length > 0 && onlineUsers.indexOf(receiver) < 0) {
-            appendMessage("Private target is offline. Switched to public mode.", "system");
+            appendMessage(t("message.privateOfflineSimple"), "system");
             setPrivateTarget("");
             receiver = "";
             content = rawContent;
@@ -1790,6 +2611,13 @@
             });
         }
 
+        sendLocked = true;
+        updateComposerState();
+        setTimeout(function () {
+            sendLocked = false;
+            updateComposerState();
+        }, 220);
+
         messageInput.value = "";
         updateMessageCounter();
         closeMentionList();
@@ -1802,12 +2630,13 @@
             return;
         }
 
-        const confirmed = window.confirm("Are you sure you want to leave the room?");
+        const confirmed = window.confirm(t("dialog.leaveConfirm"));
         if (!confirmed) {
             return;
         }
 
         leaving = true;
+        updateLeaveButton();
         const username = currentUsername;
 
         if (stompClient && stompClient.connected) {
@@ -1824,20 +2653,26 @@
             Promise.resolve(stompClient ? stompClient.deactivate() : null).finally(function () {
                 stompClient = null;
                 isConnected = false;
-                setConnectionState("Connecting", "busy");
-                returnToLobby("You left the room. Join again when ready.", "success", username);
+                setConnectionState(localized("state.connecting"), "busy");
+                returnToLobby(localized("status.leaveSuccess"), "success", username);
                 connect();
             });
         }, 120);
     }
 
     joinBtn.addEventListener("click", sendJoin);
+    langToggleEl.addEventListener("click", function () {
+        setLanguage(currentLang === "zh" ? "en" : "zh");
+    });
     themeToggleEl.addEventListener("click", function () {
         applyTheme(getCurrentTheme() === "dark" ? "light" : "dark");
     });
 
     usernameInput.addEventListener("input", updateUsernameUi);
     usernameInput.addEventListener("keydown", function (event) {
+        if (event.isComposing || event.keyCode === 229) {
+            return;
+        }
         if (event.key === "Enter" && !joinBtn.disabled) {
             sendJoin();
         }
@@ -1845,6 +2680,10 @@
 
     sendBtn.addEventListener("click", sendMessage);
     messageInput.addEventListener("keydown", function (event) {
+        if (event.isComposing || event.keyCode === 229) {
+            return;
+        }
+
         if (mentionOpen) {
             if (event.key === "ArrowDown") {
                 event.preventDefault();
@@ -1898,15 +2737,34 @@
         }
     });
 
+    messagesEl.addEventListener("scroll", function () {
+        if (isNearMessagesBottom()) {
+            clearDetachedCounter();
+        }
+    });
+
+    jumpLatestBtn.addEventListener("click", function () {
+        scrollMessagesToBottom("smooth");
+        clearDetachedCounter();
+    });
+
     leaveBtn.addEventListener("click", leaveRoom);
 
-    updateThemeToggle();
-    updateHeader();
+    [
+        langToggleEl,
+        themeToggleEl,
+        leaveBtn,
+        joinBtn,
+        jumpLatestBtn,
+        clearPrivateBtn,
+        sendBtn
+    ].forEach(bindButtonPressFeedback);
+
     updateMessageCounter();
     updateOnlineCount();
-    updateModeUi();
     updateUsernameUi();
-    showLobby();
+    applyLanguage();
+    showLobby(true);
 
     const savedUsername = sessionStorage.getItem("kichatUsername");
     if (savedUsername) {
