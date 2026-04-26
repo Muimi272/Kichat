@@ -49,8 +49,6 @@ Kichat/
 │  │  │  │  └─ UserRepo.java
 │  │  │  ├─ Service/
 │  │  │  │  └─ UserService.java
-│  │  │  ├─ util/
-│  │  │  │  └─ Kitimer.java
 │  │  │  └─ KichatApplication.java
 │  │  └─ resources/
 │  │     ├─ application.properties
@@ -327,5 +325,3 @@ mvn spring-boot:run
 - [Type](src/main/java/com/muimi/kichat/entity/Type.java)
   支持的消息类型枚举
 
-- [Kitimer](src/main/java/com/muimi/kichat/util/Kitimer.java)
-  服务端使用的 `HH:mm:ss` 时间格式化工具
