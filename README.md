@@ -1,17 +1,8 @@
 # Kichat
 
-Kichat 是一个轻量级实时聊天室，基于 Spring Boot、Thymeleaf、WebSocket 和 STOMP 构建。
+Kichat 是一个基于 Spring Boot、Thymeleaf、WebSocket 和 STOMP 的轻量级实时聊天室。
 
-项目提供：
-
-- 基于用户名的加入流程
-- 公共聊天室聊天
-- 在线用户之间的私聊
-- 在线用户查询，用于收件人建议
-- 加入/离开的系统消息
-- 支持亮色/暗色主题切换的前端页面
-
-这个仓库是一个小型全栈演示项目：后端是 Spring Boot WebSocket 应用，前端使用 Thymeleaf 模板渲染，并在浏览器端使用 STOMP 逻辑。
+当前版本使用单页聊天室界面：用户进入同一个页面后先完成加入，再在同一条 WebSocket 会话中进行公共聊天、私聊和在线用户查询，避免了页面跳转导致的连接丢失问题。
 
 ## 技术栈
 
@@ -24,28 +15,17 @@ Kichat 是一个轻量级实时聊天室，基于 Spring Boot、Thymeleaf、WebS
 - Maven / Maven Wrapper
 - 原生 HTML、CSS 和 JavaScript
 
-## 功能
+## 当前功能
 
-- 唯一用户名加入流程
-  用户从 `/join` 页面加入聊天室。重复用户名会被服务器拒绝。
-
-- 公共聊天
-  发送到公共聊天室的消息会广播给所有已连接用户。
-
-- 私聊
-  用户可以向另一个在线用户发送私信。
-
-- 基于提及的收件人选择
-  在聊天室页面输入 `@username` 会触发收件人建议，并将输入区切换到私聊模式。
-
-- 在线用户查询
-  前端会向后端请求当前在线用户列表，用于支持私聊。
-
-- 感知会话的身份校验
-  后端会把用户名绑定到 WebSocket 会话，并在处理聊天操作前根据会话校验消息归属。
-
-- 主题切换
-  UI 支持亮色模式和暗色模式，所选主题会存储在 `localStorage` 中。
+- 单页加入与聊天流程
+- 唯一用户名加入校验
+- 公共聊天室消息广播
+- 在线用户之间的私聊
+- `@username` 提及触发的私聊目标建议
+- 在线用户列表查询
+- 基于 WebSocket 会话的身份校验
+- 用户断开连接后的自动离线广播
+- 亮色 / 暗色主题切换
 
 ## 项目结构
 
@@ -54,14 +34,14 @@ Kichat/
 ├─ .mvn/
 │  └─ wrapper/
 │     └─ maven-wrapper.properties
-├─ .gitattributes
 ├─ src/
 │  ├─ main/
 │  │  ├─ java/com/muimi/kichat/
 │  │  │  ├─ controller/
 │  │  │  │  ├─ ChatController.java
 │  │  │  │  ├─ PageController.java
-│  │  │  │  └─ WebSocketConfig.java
+│  │  │  │  ├─ WebSocketConfig.java
+│  │  │  │  └─ WebSocketEventListener.java
 │  │  │  ├─ entity/
 │  │  │  │  ├─ ChatMessage.java
 │  │  │  │  └─ Type.java
@@ -78,66 +58,72 @@ Kichat/
 │  │        ├─ error.html
 │  │        ├─ join.html
 │  │        └─ room.html
-├─ README.md
+├─ .gitattributes
+├─ pom.xml
 ├─ mvnw
 ├─ mvnw.cmd
-└─ pom.xml
+└─ README.md
 ```
 
-## 工作原理
+说明：
 
-### 页面路由
+- 当前页面路由实际使用的是 `room.html`
+- `join.html` 仍保留在仓库中，但当前 `PageController` 没有把它作为入口页面暴露出来
 
-- `GET /join`
-  渲染加入页面。
+## 页面路由
 
-- `GET /room`
-  渲染聊天室页面。
+当前 HTTP 页面入口如下：
 
-当前没有为 `/` 配置控制器映射，因此推荐入口地址是：
+- `GET /`
+  渲染聊天室单页界面
+
+- `GET /kichat`
+  渲染同一个聊天室单页界面
+
+推荐直接访问：
 
 ```text
-http://localhost:8080/join
+http://localhost:8080/
 ```
 
-### WebSocket 端点
+## WebSocket 配置
 
-STOMP 端点是：
+### STOMP 端点
 
 ```text
 /ws-chat
 ```
 
-前端会直接连接到：
+浏览器会根据当前协议连接到：
 
 - `ws://<host>/ws-chat`
-- 通过 HTTPS 提供服务时使用 `wss://<host>/ws-chat`
+- `wss://<host>/ws-chat`
 
-### STOMP 配置
-
-应用目的地址前缀是：
+### 应用目的地址前缀
 
 ```text
 /Kichat
 ```
 
-消息代理前缀是：
+### 消息代理前缀
 
 ```text
 /topic
 /queue
 ```
 
-用户目的地址前缀是：
+### 用户目的地址前缀
 
 ```text
 /user
 ```
 
-心跳已启用：
+### 心跳
+
+当前启用的心跳配置为：
 
 ```text
-30s send / 30s receive
+10s send / 10s receive
 ```
 
 ## 消息路由
@@ -162,20 +148,20 @@ STOMP 端点是：
 ### 服务端 -> 客户端
 
 - `/topic/public`
-  广播公共消息以及加入/离开事件
+  广播公共消息，以及加入 / 离开系统消息
 
 - `/user/queue/private`
-  向指定用户会话投递私聊消息
+  投递私聊消息给指定用户会话
 
 - `/user/queue/error`
-  将校验错误或身份错误返回给当前用户会话
+  把校验失败、身份失败或业务错误返回给当前会话
 
 - `/user/queue/queryAll`
-  将当前在线用户列表返回给发起请求的会话
+  把在线用户列表返回给发起查询的会话
 
 ## 消息模型
 
-后端使用 `ChatMessage`，字段如下：
+后端消息载荷类为 `ChatMessage`，字段如下：
 
 - `type`
 - `sender`
@@ -192,140 +178,125 @@ STOMP 端点是：
 - `PRIVATE`
 - `QUERY`
 
-## 用户和会话管理
+## 当前前端行为
 
-在线用户通过 `UserRepo` 内部的并发集合存储在内存中。
+当前活跃页面模板是 `room.html`，它承担了加入和聊天两部分职责：
 
-后端保存的内容：
+- 页面加载后先建立 WebSocket / STOMP 连接
+- 用户在同一页输入用户名并发送 `JOIN`
+- 加入成功后切换到聊天界面，不再发生页面跳转
+- 公共消息显示在主消息流中
+- 输入 `@username` 时会请求在线用户并展示私聊候选
+- 命中候选后输入框进入私聊模式
+- 点击离开时发送 `LEAVE`，随后回到同页的加入状态
+- 主题选择保存在 `localStorage`
+- 最近一次加入成功的用户名会保存在 `sessionStorage`，用于回填输入框
 
-- 一个用户名并发集合
-- 一个 username -> sessionId 映射
+## 用户与会话管理
 
-这在实际使用中意味着：
+在线用户信息由 `UserRepo` 使用内存并发集合维护。
+
+当前实现包含两类映射：
+
+- `username -> sessionId`
+- `sessionId -> username`
+
+这带来以下特性：
 
 - 用户状态不会持久化
-- 应用重启后会清空所有用户
-- 适合作为演示或小型本地项目，不适合生产级横向扩展
-
-## 前端行为
-
-### join.html
-
-加入页面会：
-
-- 连接到 WebSocket 端点
-- 让用户输入用户名
-- 向后端发送 `JOIN` 消息
-- 将用户名存入 `sessionStorage`
-- 加入成功后跳转到 `/room`
-
-### room.html
-
-聊天室页面会：
-
-- 要求从 `sessionStorage` 中读取用户名
-- 连接到同一个 WebSocket 端点
-- 显示公共消息、私聊消息和系统消息
-- 支持通过 `@username` 指定私聊对象
-- 向服务器查询在线用户
-- 允许从私聊模式切回公共模式
-- 支持带确认的离开聊天室流程
-- 支持亮色/暗色主题切换
+- 应用重启后在线列表会被清空
+- 同名用户不能重复加入
+- 后端会按 WebSocket 会话校验消息发送者身份
+- 连接断开时，`WebSocketEventListener` 会移除用户并广播离开消息
 
 ## 运行项目
 
 ### 环境要求
 
 - JDK 25
-- Maven 3.9+ 或仓库内置的 Maven Wrapper
+- Maven 3.9+，或仓库内置的 Maven Wrapper
 
-### 开发环境启动
+### 启动方式
 
-在 Windows 上使用 Maven Wrapper：
+Windows：
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-在 macOS/Linux 上使用 Maven Wrapper：
+macOS / Linux：
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-使用本地安装的 Maven：
+本地 Maven：
 
 ```bash
 mvn spring-boot:run
 ```
 
-然后打开：
+启动后访问：
 
 ```text
-http://localhost:8080/join
+http://localhost:8080/
 ```
 
-### 构建项目
+也可以访问：
+
+```text
+http://localhost:8080/kichat
+```
+
+### 构建
+
+使用本地 Maven：
 
 ```bash
 mvn clean package
 ```
 
-或者：
+使用 Maven Wrapper：
 
 ```powershell
 .\mvnw.cmd clean package
 ```
 
-## 测试
-
-当前测试套件包含一个基础的 Spring 上下文启动测试：
-
-```bash
-mvn test
-```
-
-或者：
-
-```powershell
-.\mvnw.cmd test
-```
-
-## 说明和限制
+## 说明与限制
 
 - 用户数据只保存在内存中
 - 没有数据库集成
-- 除了基于会话绑定的用户名校验外，没有额外认证机制
-- `/` 未映射，请使用 `/join`
-- 前端依赖从 jsDelivr CDN 加载的 STOMP 客户端
-- 当前自动化测试较少
+- 没有独立认证体系，当前主要依赖会话绑定校验
+- 前端 STOMP 客户端通过 jsDelivr CDN 加载
+- 当前仓库中仍保留 `join.html`，但实际入口页面已经统一为 `room.html`
 
 ## 故障排查
 
 ### Maven Wrapper 无法启动
 
-如果 wrapper 脚本在你的环境中失败，请改用本地安装的 Maven：
+如果你的环境里 `mvnw` 或 `mvnw.cmd` 无法正常启动，可以改用本地安装的 Maven：
 
 ```bash
 mvn spring-boot:run
 ```
 
-### 无法进入聊天室
+### 无法加入聊天室
 
 请检查以下内容：
 
-- 服务器正在运行
-- 你打开的是 `/join`，而不是直接打开 `/room`
-- 用户名没有被占用
-- 浏览器可以访问 `/ws-chat`
+- 服务端是否已经启动
+- 浏览器访问的是否是 `/` 或 `/kichat`
+- 用户名是否已被其他在线用户占用
+- 浏览器是否可以建立到 `/ws-chat` 的 WebSocket 连接
 
-### 私聊没有显示收件人
+### 私聊候选没有出现
 
-私聊依赖在线用户查询流程。请确认：
+请检查以下内容：
 
-- 目标用户已经在线
-- WebSocket 连接处于活动状态
-- 当前用户已经成功加入聊天室
+- 当前用户是否已经成功加入聊天室
+- WebSocket 连接是否处于活动状态
+- 目标用户是否在线
+- 输入内容是否以 `@` 开头触发提及逻辑
 
 ## 主要后端类
 
@@ -333,25 +304,28 @@ mvn spring-boot:run
   Spring Boot 应用入口
 
 - [WebSocketConfig](src/main/java/com/muimi/kichat/controller/WebSocketConfig.java)
-  WebSocket/STOMP 端点、消息代理和心跳配置
+  WebSocket 端点、消息代理和心跳配置
 
 - [ChatController](src/main/java/com/muimi/kichat/controller/ChatController.java)
-  主要 WebSocket 消息处理逻辑
+  STOMP 消息处理逻辑
+
+- [WebSocketEventListener](src/main/java/com/muimi/kichat/controller/WebSocketEventListener.java)
+  监听断开连接事件并清理在线用户
 
 - [PageController](src/main/java/com/muimi/kichat/controller/PageController.java)
-  Thymeleaf 页面路由
+  页面路由定义
 
 - [UserRepo](src/main/java/com/muimi/kichat/repo/UserRepo.java)
-  内存中的用户和会话存储
+  内存中的用户 / 会话映射存储
 
 - [UserService](src/main/java/com/muimi/kichat/Service/UserService.java)
-  仓库之上的轻量服务层
+  对用户存储的轻量封装
 
 - [ChatMessage](src/main/java/com/muimi/kichat/entity/ChatMessage.java)
   消息载荷模型
 
 - [Type](src/main/java/com/muimi/kichat/entity/Type.java)
-  支持的消息类型
+  支持的消息类型枚举
 
 - [Kitimer](src/main/java/com/muimi/kichat/util/Kitimer.java)
-  后端使用的缓存版 `HH:mm:ss` 时间格式化工具
+  服务端使用的 `HH:mm:ss` 时间格式化工具

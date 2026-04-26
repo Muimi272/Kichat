@@ -12,12 +12,12 @@ public class UserService {
         this.userRepo = userRepo;
     }
 
-    public boolean addUser(String username) {
-        return userRepo.addUser(username);
+    public boolean addUser(String username, String sessionId) {
+        return userRepo.addUser(username, sessionId);
     }
 
-    public boolean removeUser(String username) {
-        return userRepo.removeUser(username);
+    public boolean removeUser(String username, String sessionId) {
+        return userRepo.removeUser(username, sessionId);
     }
 
     public boolean containsUser(String username) {
@@ -32,15 +32,12 @@ public class UserService {
         return sb.toString();
     }
 
-    public void bindSession(String username, String sessionId) {
-        userRepo.bindSession(username, sessionId);
+
+    public String getUser(String sessionId) {
+        return userRepo.getUser(sessionId);
     }
 
     public String getSessionId(String username) {
         return userRepo.getSessionId(username);
-    }
-
-    public void unbindSession(String username) {
-        userRepo.unbindSession(username);
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.util.Map;
+
 @Controller
 public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
@@ -30,11 +32,17 @@ public class ChatController {
             sendErrorToSession(headerAccessor, chatMessage);
             return;
         }
-        if (userService.addUser(chatMessage.getSender())) {
+        if (chatMessage.getSender().contains("[") || chatMessage.getSender().contains("]")) {
+            chatMessage.setType(Type.ERROR);
+            chatMessage.setContent("Illegal username");
+            chatMessage.setTime(Kitimer.getCurrentTime());
+            sendErrorToSession(headerAccessor, chatMessage);
+            return;
+        }
+        if (userService.addUser(chatMessage.getSender(), headerAccessor.getSessionId())) {
             if (headerAccessor.getSessionAttributes() != null) {
                 headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
             }
-            userService.bindSession(chatMessage.getSender(), headerAccessor.getSessionId());
             chatMessage.setTime(Kitimer.getCurrentTime());
             chatMessage.setContent(chatMessage.getSender() + " joined room.");
             messagingTemplate.convertAndSend("/topic/public", chatMessage);
@@ -113,7 +121,7 @@ public class ChatController {
             sendErrorToSession(headerAccessor, chatMessage);
             return;
         }
-        if (!userService.removeUser(chatMessage.getSender())) {
+        if (!userService.removeUser(chatMessage.getSender(), headerAccessor.getSessionId())) {
             if (userService.containsUser(chatMessage.getSender())) {
                 chatMessage.setType(Type.ERROR);
                 chatMessage.setContent("User deletion failed.");
@@ -125,7 +133,6 @@ public class ChatController {
         if (headerAccessor.getSessionAttributes() != null) {
             headerAccessor.getSessionAttributes().remove("username");
         }
-        userService.unbindSession(chatMessage.getSender());
         chatMessage.setContent(chatMessage.getSender() + " left room.");
         chatMessage.setTime(Kitimer.getCurrentTime());
         messagingTemplate.convertAndSend("/topic/public", chatMessage);
@@ -140,7 +147,6 @@ public class ChatController {
             sendErrorToSession(headerAccessor, chatMessage);
             return true;
         }
-        userService.bindSession(chatMessage.getSender(), headerAccessor.getSessionId());
         return false;
     }
 
@@ -150,16 +156,23 @@ public class ChatController {
 
     @SuppressWarnings({"BooleanMethodIsAlwaysInverted"})
     private boolean userIdentityVerify(ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
-        if (headerAccessor.getSessionAttributes() == null) {
-            return userService.containsUser(chatMessage.getSender());
+        String sender = chatMessage.getSender();
+        String sessionId = headerAccessor.getSessionId();
+        Map<String, Object> attrs = headerAccessor.getSessionAttributes();
+        if (attrs == null) {
+            String registeredSession = userService.getSessionId(sender);
+            return registeredSession != null && registeredSession.equals(sessionId);
         }
-        Object username = headerAccessor.getSessionAttributes().get("username");
-        if (username == null && userService.containsUser(chatMessage.getSender())) {
-            headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
+        Object storedUser = attrs.get("username");
+        if (storedUser != null) {
+            return sender.equals(storedUser);
+        }
+        String registeredSession = userService.getSessionId(sender);
+        if (registeredSession != null && registeredSession.equals(sessionId)) {
+            attrs.put("username", sender);
             return true;
         }
-        if (username == null) return false;
-        return chatMessage.getSender().equals(username);
+        return false;
     }
 
     private void sendErrorToSession(SimpMessageHeaderAccessor headerAccessor, ChatMessage errorMessage) {

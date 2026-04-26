@@ -6,12 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PageController {
 
-    @GetMapping("/join")
+    @GetMapping("/kichat")
     public String joinPage() {
-        return "join";
+        return "room";
     }
 
-    @GetMapping("/room")
+    @GetMapping("/")
     public String roomPage() {
         return "room";
     }

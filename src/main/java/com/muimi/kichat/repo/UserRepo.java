@@ -7,38 +7,41 @@ import java.util.*;
 
 @Repository
 public class UserRepo {
-    private static final Set<String> userSet = ConcurrentHashMap.newKeySet();
+    private static final Map<String, String> userMap = new ConcurrentHashMap<>();
     private static final Map<String, String> userSessionMap = new ConcurrentHashMap<>();
 
-    public boolean addUser(String username) {
-        return userSet.add(username);
+    public boolean addUser(String username, String sessionId) {
+        String existingUser = userSessionMap.putIfAbsent(sessionId, username);
+        if (existingUser != null) return false;
+        String existingSession = userMap.putIfAbsent(username, sessionId);
+        if (existingSession != null) {
+            userSessionMap.remove(sessionId, username);
+            return false;
+        }
+        return true;
     }
 
-    public boolean removeUser(String username) {
-        userSessionMap.remove(username);
-        return userSet.remove(username);
+    public boolean removeUser(String username, String sessionId) {
+        if (userSessionMap.remove(sessionId, username)) {
+            userMap.remove(username, sessionId);
+            return true;
+        }
+        return false;
     }
 
     public boolean containsUser(String username) {
-        return userSet.contains(username);
+        return userMap.containsKey(username);
     }
 
     public List<String> getUsers() {
-        return new ArrayList<>(userSet);
+        return new ArrayList<>(userMap.keySet());
     }
 
-    public void bindSession(String username, String sessionId) {
-        if (username == null || sessionId == null) {
-            return;
-        }
-        userSessionMap.put(username, sessionId);
+    public String getUser(String sessionId) {
+        return userSessionMap.get(sessionId);
     }
 
     public String getSessionId(String username) {
-        return userSessionMap.get(username);
-    }
-
-    public void unbindSession(String username) {
-        userSessionMap.remove(username);
+        return userMap.get(username);
     }
 }
